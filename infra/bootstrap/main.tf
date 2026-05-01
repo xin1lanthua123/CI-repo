@@ -10,7 +10,7 @@ resource "aws_kms_key" "tf_state" {
 }
 
 resource "aws_s3_bucket" "tf_state" {
-  bucket = "${var.project_name}-tf-state"
+  bucket = "${var.project_name}-terraform-tf-state"
     tags = {
     Project = var.project_name
   }

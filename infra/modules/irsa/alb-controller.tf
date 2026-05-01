@@ -38,7 +38,7 @@ resource "aws_iam_role_policy_attachment" "alb_attach" {
   policy_arn = aws_iam_policy.alb_controller_policy[0].arn
 }
 
-resource "kubernetes_service_account" "alb" {
+resource "kubernetes_service_account_v1" "alb" {
   metadata {
     name      = var.alb_service_account
     namespace = "kube-system"
@@ -85,6 +85,6 @@ resource "helm_release" "aws_lb_controller" {
 
   depends_on = [
     aws_iam_role_policy_attachment.alb_attach,
-    kubernetes_service_account.alb
+    kubernetes_service_account_v1.alb
   ]
 }

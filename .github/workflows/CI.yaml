@@ -22,6 +22,12 @@ jobs:
             - name: Setup Terraform
               uses: hashicorp/setup-terraform@v3
 
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
             - name: Configure AWS Credentials
               uses: aws-actions/configure-aws-credentials@v4
               with:
@@ -41,6 +47,25 @@ jobs:
         runs-on: ubuntu-latest
         if: github.event.inputs.action == 'apply'
         steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+
             - name: Apply terraform infra using terragrunt
               working-directory: infra/terragrunt/live/prod
               run: |
@@ -49,6 +74,25 @@ jobs:
         runs-on: ubuntu-latest
         if: github.event.inputs.action == 'destroy'
         steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+                
             - name: Apply terraform infra using terragrunt
               working-directory: infra/terragrunt/live/prod
               run: |

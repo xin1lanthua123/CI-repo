@@ -21,7 +21,7 @@ inputs = {
     db_username = include.env.locals.rds.db_username
     db_password = dependency.aws_secret_manager.outputs.db_password
     env         = include.env.locals.tags.env
-    allowed_cluster_security_group = [dependency.eks_core.outputs.cluster_security_group_id]
+    allowed_cluster_security_group = dependency.eks_core.outputs.cluster_security_group_id
 
 }
 

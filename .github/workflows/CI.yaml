@@ -99,7 +99,7 @@ jobs:
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ vars.AWS_REGION }}
 
-            - name: Apply terraform infra using terragrunt
+            - name: Destroy terraform infra using terragrunt
               working-directory: infra/terragrunt/live/prod
               run: |
                 terragrunt run-all destroy -auto-approve --terragrunt-non-interactive

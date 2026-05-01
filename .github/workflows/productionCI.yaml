@@ -1,0 +1,227 @@
+# name: Kubernetes-CI
+
+# on:
+#   push:
+#       branches:
+#       - dev
+#       - staging
+#       - main
+#       - feature/*
+#   pull_request:
+#     branches:
+#       - dev
+#       - staging
+#       - main
+# env:
+#   USERNAME: ${{ secrets.DOCKER_USERNAME }}
+#   IMAGE_TAG: ${{ github.sha }}
+# jobs:
+#   bazel-detect-changed-files:
+#     if: ${{ github.event_name == 'pull_request' || github.ref_name == 'dev' }}
+#     uses: ./.github/workflows/EKS-ArgoCD-Setup/reusable-workflow/workflow-call/detect-changed-services.yml
+#   test:
+#     runs-on: ubuntu-latest
+#     needs: bazel-detect-changed-files
+#     if: ${{ needs.bazel-detect-changed-files.outputs.services != '[]'}}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         services: ${{ fromJson(needs.bazel-detect-changed-files.outputs.services) }}
+
+#     steps:
+#     - name: check out code
+#       uses: actions/checkout@v4
+
+#     - name: Detect languages
+#       id: lang
+#       uses: ./.github/workflows/EKS-ArgoCD-Setup/composite-workflow/detect-languages/detect-languages.yml
+#       with:
+#         services: ${{ matrix.services }}
+
+#     - name: Install Dependencies
+#       uses: ./.github/workflows/EKS-ArgoCD-Setup/composite-workflow/install-dependencies/install-dependencies.yml
+#       with: 
+#         services: ${{ matrix.services }}
+#         languages: ${{ steps.lang.outputs.lang }}
+
+# # ################################
+# # SAST (STATIC CODE SCAN)  = scan code bug
+# # ################################
+
+#   sast:
+#     runs-on: ubuntu-latest
+#     needs: test
+
+#     permissions:
+#       security-events: write
+#       contents: read
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Initialize CodeQL
+#         uses: github/codeql-action/init@v3
+#         with:
+#           languages: javascript,python,go
+
+#       - name: Autobuild
+#         uses: github/codeql-action/autobuild@v3
+
+#       - name: Perform CodeQL analysis
+#         uses: github/codeql-action/analyze@v3
+
+# # ###############################################
+# #  SECRET SCAN tìm lỗ hổng secret bị hardcoded
+# # ###############################################
+
+#   secret-scan:
+#     runs-on: ubuntu-latest
+#     needs: test
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Detect hardcoded secrets
+#         uses: gitleaks/gitleaks-action@v2
+
+#   #################################
+# # 2️⃣ Dependency Scan = scan library CVE
+# #################################
+#   security-scan-source:
+#     runs-on: ubuntu-latest
+#     needs: test
+
+#     steps:
+#       - uses: actions/checkout@v4
+
+#       - name: Scan filesystem
+#         uses: aquasecurity/trivy-action@0.20.0
+#         with:
+#           scan-type: fs
+#           severity: CRITICAL,HIGH
+#           exit-code: 1
+
+# #################################
+# # BAZEL BUILD (REMOTE CACHE + SELECTIVE BUILD)
+# #################################
+
+#   bazel-build-for-pr:
+#     runs-on: ubuntu-latest
+#     needs: [security-scan-source,secret-scan,sast,bazel-detect-changed-files]
+#     steps:
+#       - name: check out
+#         uses: actions/checkout@v4
+
+#       - name: Setup Bazel
+#         uses: bazelbuild/setup-bazelisk@v2
+
+#       - name: Setup Bazel local cache
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.cache/bazel
+#           key:  bazel-${{ runner.os }}-${{ hashFiles('**/WORKSPACE','**/BUILD','**/*.bzl') }}
+#           restore-keys: |
+#              bazel-${{ runner.os }}
+
+     
+#       - name: Bazel Build (Selective)   (Build affected targets)
+#         if: ${{ needs.bazel-detect-changed-files.outputs.targets != '' }}
+#         run: |
+#           bazel build ${{ needs.bazel-detect-changed-files.outputs.targets }} \
+#           --remote_cache=https://bazel-cache.company.com
+
+#       - name: Upload bazel artifacts
+#         uses: actions/upload-artifact@v4
+#         with:
+#           name: bazel-build-artifacts
+#           path: bazel-bin/services
+
+#   bazel-build-for-push:
+#     runs-on: ubuntu-latest
+#     needs: [security-scan-source,secret-scan,sast,bazel-detect-changed-files]
+#     if: ${{ github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'staging') }}
+#     steps:
+#       - uses: actions/checkout@v4
+        
+
+#       - name: Setup Bazel
+#         uses: bazelbuild/setup-bazelisk@v2
+
+#       - name: Setup Bazel local cache
+#         uses: actions/cache@v4
+#         with:
+#           path: ~/.cache/bazel
+#           key: bazel-${{ runner.os }}-${{ github.sha }}
+#           restore-keys: |
+#              bazel-${{ runner.os }}
+
+#       - name: Build entire repo
+#         run: |
+#           bazel build //...
+
+#       # - name: Run all tests
+#       #   run: |
+#       #     bazel test //...
+
+# #################################
+# # 3️⃣ BUILD & PUSH DOCKER IMAGE
+# #################################
+#   build:
+#     runs-on: ubuntu-latest
+#     if: ${{  (needs.bazel-detect-changed-files.result == 'success' && needs.bazel-detect-changed-files.outputs.services != '[]') }}
+#     strategy:
+#       fail-fast: false
+#       matrix:
+#         services: ${{ fromJson(needs.bazel-detect-changed-files.outputs.services) }}
+#     needs: 
+#       -  bazel-detect-changed-files
+#       -  bazel-build-for-pr
+#     permissions:
+#       contents: read
+#       id-token: write
+
+#     outputs:
+#       image_tag: ${{ steps.meta.outputs.tag }}
+#       digest: ${{ steps.build-image.outputs.digest }} 
+
+#     steps:
+#       - name: Checkout
+#         uses: actions/checkout@v4
+
+#       - name: Download artifact from CI workflow
+#         uses: actions/download-artifact@v4
+#         with:
+#           # workflow: CI-pipeline.yml
+#           name: bazel-build-artifacts
+#           path: bazel-bin/
+
+#       - name: Generate image metadata
+#         id: meta
+#         run: |
+#           echo "tag=${IMAGE_TAG}" >> $GITHUB_OUTPUT
+#           echo "commit=${GITHUB_SHA}" >> $GITHUB_OUTPUT
+
+#       - name: Set up Docker Buildx
+#         uses: docker/setup-buildx-action@v3
+
+#       - name: Login DockerHub
+#         uses: ./.github/workflows/EKS-ArgoCD-Setup/composite-workflow/login-dockerhub/login-dockerhub.yml
+
+#       - name: Build and Push Image with layer cache
+#         id: build-image
+#         uses: docker/build-push-action@v5
+#         env:
+#            IMAGE_NAME: ${{ env.USERNAME }}/${{ matrix.services }}
+#         with:
+#           context: .
+#           file: ./services/${{ matrix.services }}/Dockerfile
+#           platforms: linux/amd64,linux/arm64
+#           push: true
+#           tags: |
+#             ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+#           labels: |
+#             org.opencontainers.image.source=${{ github.repository }}
+#             org.opencontainers.image.revision=${{ github.sha }}
+#           cache-from: type=gha
+#           cache-to: type=gha,mode=max
+#           provenance: false

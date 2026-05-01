@@ -1,0 +1,19 @@
+include "root" {
+    path = find_in_parent_folders()
+}
+include "env" {
+    path = find_in_parent_folders("env.hcl")
+    expose = true
+    merge_strategy = "no_merge"
+    }
+terraform {
+    source = "../../../../modules/S3-Backup-logs"
+}
+inputs = {
+    enable_kms   = include.env.locals.S3_logs.enable_kms
+    tags         = include.env.locals.tags
+    project_name = include.env.locals.tags.Project
+    env          =  include.env.locals.tags.env
+}
+
+     

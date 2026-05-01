@@ -1,0 +1,56 @@
+name: CI pipeline
+on: 
+    workflow_dispatch:
+      inputs:
+        action:
+            description: "Terraform action"
+            required: true
+            default: "apply"
+            type: choice
+            options:
+            - apply
+            - bootstrap
+jobs:
+    terraform-bootstrap:
+        runs-on: ubuntu-latest
+        if: github.event.inputs.action == 'bootstrap'
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+
+            - name: Apply terraform bootstrap using terragrunt
+              working-directory: infra/bootstrap/local
+              run: |
+                terragrunt apply --auto-approve -terragrunt-non-interactive
+            - name: Migrate local state to remote state S3
+              working-directory: infra/bootstrap/local
+              run: |
+                terragrunt init -migrate-state -force-copy -terragrunt-non-interactive  
+    terraform-apply:
+        runs-on: ubuntu-latest
+        if: github.event.inputs.action == 'apply'
+        steps:
+            - name: Apply terraform infra using terragrunt
+              working-directory: infra/live/prod
+              run: |
+                terragrunt apply --auto-approve -terragrunt-non-interactive
+    terraform-destroy:
+        runs-on: ubuntu-latest
+        if: github.event.inputs.action == 'apply'
+        steps:
+            - name: Apply terraform infra using terragrunt
+              working-directory: infra/live/prod
+              run: |
+                terragrunt destroy --auto-approve -terragrunt-non-interactive
+
+            

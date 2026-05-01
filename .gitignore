@@ -1,0 +1,53 @@
+.exe
+.md
+.MD
+
+#####################################
+# Terraform
+#####################################
+
+*.tfstate
+*.tfstate.*
+crash.log
+
+.terraform/
+.terraform.lock.hcl
+
+tfplan
+*.tfplan
+
+*.tfvars
+*.tfvars.json
+
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+terraform.log
+
+#####################################
+# Terragrunt
+#####################################
+
+# Terragrunt cache directory
+.terragrunt-cache/
+
+# Terragrunt downloaded modules/providers
+**/.terragrunt-cache/
+
+# Terragrunt plan/apply temp files
+terragrunt-debug.tfvars
+terragrunt.hcl.lock
+
+# Generated files (if you use generate blocks)
+.terragrunt-generated/
+
+#####################################
+# OS / IDE
+#####################################
+
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/

@@ -74,7 +74,7 @@ jobs:
             - name: Apply terraform infra using terragrunt
               working-directory: infra/terragrunt/live/prod
               run: |
-                terragrunt run-all plan --terragrunt-non-interactive
+               
                 terragrunt run-all apply -auto-approve --terragrunt-non-interactive
     terraform-destroy:
         runs-on: ubuntu-latest

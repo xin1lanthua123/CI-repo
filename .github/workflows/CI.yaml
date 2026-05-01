@@ -103,5 +103,11 @@ jobs:
               working-directory: infra/terragrunt/live/prod
               run: |
                 terragrunt run-all destroy -auto-approve --terragrunt-non-interactive
+            
+            
+            - name: Destroy terraform bootstrap using terragrunt
+              working-directory: infra/terragrunt/bootstrap/local
+              run: |
+                terragrunt destroy -auto-approve --terragrunt-non-interactive
 
             

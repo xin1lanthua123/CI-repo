@@ -10,6 +10,7 @@ on:
             options:
             - apply
             - bootstrap
+            - destroy
 jobs:
     terraform-bootstrap:
         runs-on: ubuntu-latest
@@ -29,11 +30,11 @@ jobs:
                 aws-region: ${{ vars.AWS_REGION }}
 
             - name: Apply terraform bootstrap using terragrunt
-              working-directory: infra/bootstrap/local
+              working-directory: infra/terragrunt/bootstrap/local
               run: |
                 terragrunt apply --auto-approve -terragrunt-non-interactive
             - name: Migrate local state to remote state S3
-              working-directory: infra/bootstrap/local
+              working-directory: infra/terragrunt/bootstrap/local
               run: |
                 terragrunt init -migrate-state -force-copy -terragrunt-non-interactive  
     terraform-apply:
@@ -41,15 +42,15 @@ jobs:
         if: github.event.inputs.action == 'apply'
         steps:
             - name: Apply terraform infra using terragrunt
-              working-directory: infra/live/prod
+              working-directory: infra/terragrunt/live/prod
               run: |
                 terragrunt apply --auto-approve -terragrunt-non-interactive
     terraform-destroy:
         runs-on: ubuntu-latest
-        if: github.event.inputs.action == 'apply'
+        if: github.event.inputs.action == 'destroy'
         steps:
             - name: Apply terraform infra using terragrunt
-              working-directory: infra/live/prod
+              working-directory: infra/terragrunt/live/prod
               run: |
                 terragrunt destroy --auto-approve -terragrunt-non-interactive
 

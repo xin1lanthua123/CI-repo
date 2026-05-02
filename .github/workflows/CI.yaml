@@ -116,5 +116,12 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               run: |
                 terragrunt destroy -auto-approve --terragrunt-non-interactive
+            
+            - name: destroy all s3 bucket versioning
+              working-directory: infra/terragrunt
+              run: |
+                set -euo pipefail
+                chmod +x delete-s3.sh
+                ./delete-s3.sh
 
             

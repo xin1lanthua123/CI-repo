@@ -72,10 +72,10 @@ jobs:
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ vars.AWS_REGION }}
 
-            # - name: Plan terraform infra using terragrunt
-            #   working-directory: infra/terragrunt/live/prod
-            #   run: |
-            #     terragrunt run-all plan --terragrunt-non-interactive
+            - name: Plan terraform infra using terragrunt
+              working-directory: infra/terragrunt/live/prod
+              run: |
+                terragrunt run-all plan --terragrunt-non-interactive
             
 
             - name: Apply terraform infra using terragrunt

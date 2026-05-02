@@ -1,3 +1,13 @@
+cat > ../../../bootstrap/backend.tf <<EOF
+terraform {
+  backend "local" {
+  }
+}
+EOF
+
+echo "Successfully generated root hcl"
+
+cat > terragrunt.hcl <<EOF
 
 terraform {
     source = "../../../bootstrap"
@@ -16,3 +26,6 @@ inputs = {
    github_repo    = include.env.locals.bootstrap.github_repo
    env            = include.env.locals.bootstrap.env
 }
+EOF
+
+echo "successfully generated remote boostrap state"

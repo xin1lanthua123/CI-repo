@@ -39,6 +39,12 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               run: |
                 terragrunt apply --auto-approve -terragrunt-non-interactive
+            - name: set up config for state migration
+              working-directory: infra/terragrunt/bootstrap/local
+              run: |
+                chmod +x remote_state.sh
+                ./remote_state.sh
+                
             - name: Migrate local state to remote state S3
               working-directory: infra/terragrunt/bootstrap/local
               run: |
@@ -70,6 +76,7 @@ jobs:
               working-directory: infra/terragrunt/live/prod
               run: |
                 terragrunt run-all plan --terragrunt-non-interactive
+            
 
             - name: Apply terraform infra using terragrunt
               if: always()

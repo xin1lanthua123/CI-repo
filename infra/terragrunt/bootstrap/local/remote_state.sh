@@ -1,28 +1,28 @@
+BUCKET=$(terragrunt output -raw tfstate_bucket_name)
+DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
+echo "S3 bucket : $BUCKET"
+echo "DynamoDB lock :$DYNAMODB_LOCK"
+
 cat > ../../../bootstrap/backend.tf <<EOF
 terraform {
-  backend "local" {
+  backend "s3" {
   }
-}
-EOF
-cat > ../../terragrunt.hcl <<EOF
-locals {
-  aws_region = "us-east-1"
-}
-
-generate "provider" {
-  path      = "provider.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<EOT
-provider "aws" {
-  region = "\${local.aws_region}"
-}
-EOT
 }
 EOF
 
 echo "Successfully generated root hcl"
 
 cat > terragrunt.hcl <<EOF
+remote_state {
+  backend = "s3"
+  config = {
+    bucket         = "$BUCKET"
+    key            = "\${path_relative_to_include()}/terraform.tfstate"
+    region         = "us-east-1"
+    dynamodb_table = "$DYNAMODB_LOCK"
+    encrypt        = true
+  }
+}
 
 terraform {
     source = "../../../bootstrap"

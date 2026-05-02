@@ -31,6 +31,7 @@ locals {
     }
   }
   irsa = {
+    domain_name           = "quanldl.uk"
     region                = "us-east-1"
     enable_alb_controller = true
     enable_dns_external   = true

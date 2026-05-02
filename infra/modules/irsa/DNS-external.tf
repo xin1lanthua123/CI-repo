@@ -62,3 +62,66 @@ resource "aws_iam_role_policy_attachment" "externaldns_attach" {
   role       = aws_iam_role.externaldns_irsa[0].name
   policy_arn = aws_iam_policy.externaldns_policy[0].arn
 }
+
+resource "kubernetes_service_account_v1" "externaldns" {
+  count = var.enable_dns_external ? 1 : 0
+  metadata {
+    name      = var.external_dns_sa 
+    namespace = "kube-system"
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.externaldns_irsa[0].arn
+    }
+  }
+}
+resource "helm_release" "externaldns" {
+  count = var.enable_dns_external ? 1 : 0
+  name       = "external-dns"
+  namespace  = "kube-system"
+  repository = "https://kubernetes-sigs.github.io/external-dns/"
+  chart      = "external-dns"
+  version = "1.15.0" 
+  atomic          = true
+  cleanup_on_fail = true
+  wait            = true
+  timeout         = 300
+
+  set {
+  name  = "provider"
+  value = "aws"
+}
+  set {
+    name  = "aws.region"
+    value = var.region
+  }
+
+  
+   set {
+    name  = "txtOwnerId"
+    value = var.cluster_name
+  }
+
+  set {
+    name  = "domainFilters[0]"
+    value = var.domain_name
+  }
+
+  set {
+    name  = "policy"
+    value = "upsert-only"
+  }
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = var.external_dns_sa
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.externaldns_attach,
+    kubernetes_service_account_v1.externaldns[0]
+  ]
+}

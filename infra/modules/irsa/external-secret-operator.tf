@@ -60,3 +60,57 @@ resource "aws_iam_role_policy_attachment" "eso_attach" {
   role       = aws_iam_role.eso_irsa[0].name
   policy_arn = aws_iam_policy.eso_policy[0].arn
 }
+
+resource "kubernetes_service_account_v1" "eso" {
+  count = var.enable_eso ? 1 : 0
+
+  metadata {
+    name      = var.external_secrets_sa
+    namespace = "external-secrets"
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.eso_irsa[0].arn
+    }
+  }
+}
+
+resource "kubernetes_namespace_v1" "eso" {
+  count = var.enable_eso ? 1 : 0
+  metadata {
+    name = "external-secrets"
+  }
+}
+resource "helm_release" "external_secrets" {
+  count = var.enable_eso ? 1 : 0
+
+  name       = "external-secrets"
+  namespace  = "external-secrets"
+  repository = "https://charts.external-secrets.io"
+  chart      = "external-secrets"
+  version    = "2.4.1"
+  atomic          = true
+  cleanup_on_fail = true
+  wait            = true
+  timeout         = 60
+
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = var.external_secrets_sa
+  }
+
+  set {
+    name  = "installCRDs"
+    value = "true"
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.eso_attach,
+    kubernetes_service_account_v1.eso[0],
+    kubernetes_namespace_v1.eso[0]
+  ]
+}

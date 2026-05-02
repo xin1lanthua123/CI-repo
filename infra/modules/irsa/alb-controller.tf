@@ -39,8 +39,9 @@ resource "aws_iam_role_policy_attachment" "alb_attach" {
 }
 
 resource "kubernetes_service_account_v1" "alb" {
+  count = var.enable_alb_controller ? 1 : 0
   metadata {
-    name      = var.alb_service_account
+    name      = var.alb_service_sa
     namespace = "kube-system"
     annotations = {
       "eks.amazonaws.com/role-arn" = aws_iam_role.alb_irsa_role[0].arn
@@ -52,6 +53,11 @@ resource "helm_release" "aws_lb_controller" {
   namespace  = "kube-system"
   repository = "https://aws.github.io/eks-charts"
   chart      = "aws-load-balancer-controller"
+  version = "1.7.2"
+  atomic          = true
+  cleanup_on_fail = true
+  wait            = true
+  timeout         = 300
 
   set {
     name  = "clusterName"
@@ -65,12 +71,7 @@ resource "helm_release" "aws_lb_controller" {
 
   set {
     name  = "serviceAccount.name"
-    value = var.alb_service_account
-  }
-
-  set {
-    name  = "serviceAccount.annotations.eks.amazonaws.com/role-arn"
-    value = aws_iam_role.alb_irsa_role[0].arn
+    value = var.alb_service_sa
   }
 
   set {
@@ -85,6 +86,6 @@ resource "helm_release" "aws_lb_controller" {
 
   depends_on = [
     aws_iam_role_policy_attachment.alb_attach,
-    kubernetes_service_account_v1.alb
+    kubernetes_service_account_v1.alb[0]
   ]
 }

@@ -10,6 +10,7 @@ terraform {
     source = "../../../../modules/irsa"
 }
 inputs = {
+  domain_name             =  include.env.locals.irsa.domain_name
   vpc_id                  = dependency.vpc.outputs.vpc_id
   project_name            = include.env.locals.tags.Project
   region                  = include.env.locals.irsa.region
@@ -23,7 +24,11 @@ inputs = {
   oidc_provider_arn       = dependency.eks_core.outputs.oidc_provider_arn
   oidc_provider_url       = dependency.eks_core.outputs.oidc_provider_url
   cluster_name            = dependency.eks_core.outputs.cluster_name
-  alb_service_account     = include.env.locals.service_accounts.alb_service_account
+  karpenter_sa            = "karpenter"
+  external_secrets_sa     = "external-secrets"
+  external_dns_sa         = "external-dns"
+  ebs_csi_driver_sa       = "ebs-csi-controller-sa"
+  alb_service_sa          = include.env.locals.service_accounts.alb_service_account
 }
 dependency "eks_core" {
     config_path = "../eks_core"

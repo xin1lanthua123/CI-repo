@@ -92,3 +92,66 @@ resource "aws_iam_role_policy_attachment" "karpenter_attach" {
   role       = aws_iam_role.karpenter_irsa[0].name
   policy_arn = aws_iam_policy.karpenter_policy[0].arn
 }
+
+resource "kubernetes_namespace_v1" "karpenter" {
+  count = var.enable_karpenter ? 1 : 0
+
+  metadata {
+    name = "karpenter"
+  }
+}
+resource "kubernetes_service_account_v1" "karpenter" {
+  count = var.enable_karpenter ? 1 : 0
+
+  metadata {
+    name      = var.karpenter_sa   
+    namespace = "karpenter"
+
+    annotations = {
+      "eks.amazonaws.com/role-arn" = aws_iam_role.karpenter_irsa[0].arn
+    }
+  }
+}
+
+resource "helm_release" "karpenter" {
+  count = var.enable_karpenter ? 1 : 0
+
+  name       = "karpenter"
+  namespace  = "karpenter"
+  repository = "oci://public.ecr.aws/karpenter"
+  chart      = "karpenter"
+  version    = "1.12.0"
+  atomic          = true
+  cleanup_on_fail = true
+  wait            = true
+  timeout         = 300
+  set {
+    name  = "serviceAccount.create"
+    value = "false"
+  }
+
+  set {
+    name  = "serviceAccount.name"
+    value = var.karpenter_sa            
+  }
+  set {
+    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
+    value = aws_iam_role.karpenter_irsa[0].arn
+  }
+
+  set {
+    name  = "settings.clusterName"
+    value = var.cluster_name
+  }
+
+  set {
+    name  = "settings.clusterEndpoint"
+    value = data.aws_eks_cluster.eks.endpoint
+  }
+
+  depends_on = [
+    aws_iam_role_policy_attachment.karpenter_attach,
+    kubernetes_service_account_v1.karpenter[0],
+    kubernetes_namespace_v1.karpenter[0]
+  ]
+}

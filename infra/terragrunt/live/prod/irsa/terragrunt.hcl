@@ -30,14 +30,14 @@ inputs = {
   cluster_ca              = dependency.eks_core.outputs.cluster_ca
   cluster_endpoint        = dependency.eks_core.outputs.cluster_endpoint
 
-  karpenter_sa            = include.env.locals.ỉrsa.service_accounts.karpenter_sa
-  external_secrets_sa     = include.env.locals.ỉrsa.service_accounts.external_secrets_sa
-  external_dns_sa         = include.env.locals.ỉrsa.service_accounts.external_dns_sa
-  ebs_csi_driver_sa       = include.env.locals.ỉrsa.service_accounts.ebs_csi_driver_sa
-  ebs_csi_version         = include.env.locals.ỉrsa.service_accounts.ebs_csi_version
-  alb_service_sa          = include.env.locals.ỉrsa.service_accounts.alb_service_sa
-  helm_argocd_version     = include.env.locals.ỉrsa.service_accounts.helm_argocd_version
-  server_insecure         = include.env.locals.ỉrsa.service_accounts.server_insecure
+  karpenter_sa            = include.env.locals.irsa.service_accounts.karpenter_sa
+  external_secrets_sa     = include.env.locals.irsa.service_accounts.external_secrets_sa
+  external_dns_sa         = include.env.locals.irsa.service_accounts.external_dns_sa
+  ebs_csi_driver_sa       = include.env.locals.irsa.service_accounts.ebs_csi_driver_sa
+  ebs_csi_version         = include.env.locals.irsa.service_accounts.ebs_csi_version
+  alb_service_sa          = include.env.locals.irsa.service_accounts.alb_service_sa
+  helm_argocd_version     = include.env.locals.irsa.service_accounts.helm_argocd_version
+  server_insecure         = include.env.locals.irsa.service_accounts.server_insecure
 }
 
 dependency "eks_core" {
@@ -46,7 +46,7 @@ dependency "eks_core" {
     mock_outputs = {
     cluster_endpoint = "https://mock"
     cluster_ca       = "bW9jaw==" # base64
-    eks_cluster_arn = "arn:aws:eks:ap-southeast-1:123456789012:cluster/mock-cluster"
+    eks_cluster_arn = "arn:aws:eks:us-east-1:123456789012:cluster/mock-cluster"
     oidc_provider_arn = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"
     oidc_provider_url = "oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"
     cluster_name      = "eks-cluster"

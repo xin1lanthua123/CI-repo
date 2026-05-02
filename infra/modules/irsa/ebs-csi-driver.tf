@@ -36,8 +36,9 @@ resource "aws_eks_addon" "ebs_csi" {
   cluster_name             = var.cluster_name
   addon_name               = "aws-ebs-csi-driver"
   service_account_role_arn = aws_iam_role.ebs_csi[0].arn
-  resolve_conflicts_on_create = "OVERWRITE"
-  resolve_conflicts_on_update = "OVERWRITE"
+  # resolve_conflicts_on_create = "OVERWRITE"
+  # resolve_conflicts_on_update = "OVERWRITE"
+  resolve_conflicts = "OVERWRITE"
   addon_version = var.ebs_csi_version
 
 }

@@ -19,7 +19,7 @@ resource "aws_iam_role" "karpenter_node" {
 
 resource "aws_iam_role_policy_attachment" "node_worker" {
   count      = var.enable_karpenter ? 1 : 0
-  role       = aws_iam_role.karpenter_nodeơ[0].name
+  role       = aws_iam_role.karpenter_node[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 

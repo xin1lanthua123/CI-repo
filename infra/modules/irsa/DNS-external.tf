@@ -28,7 +28,7 @@ resource "aws_iam_role" "externaldns_irsa" {
 
 resource "aws_iam_policy" "externaldns_policy" {
   count = var.enable_dns_external ? 1 : 0
-  name        = "${var.env}-${var.cluster_name}-externaldns-policy"
+  name        = "${var.cluster_name}-externaldns-policy"
   description = "Allow ExternalDNS to manage Route53 DNS records"
 
   policy = jsonencode({

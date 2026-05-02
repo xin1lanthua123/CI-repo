@@ -4,7 +4,7 @@ locals {
    enable_kms   = true
    project_name = "myapp"
    github_org   = "xin1lanthua123"
-   github_repo  = "CD-repo"
+   github_repo  = "CI-repo"
    env          = "prod"
   }
  

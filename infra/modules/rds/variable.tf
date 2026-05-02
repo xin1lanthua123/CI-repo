@@ -57,5 +57,5 @@ variable "multi_az" {
 }
 
 variable "allowed_cluster_security_group" {
-  type = string
+  type = list(string)
 }

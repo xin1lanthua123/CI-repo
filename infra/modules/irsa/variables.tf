@@ -28,6 +28,11 @@ variable "ebs_csi_driver_sa" {
   type = string
   default = "ebs-csi-controller-sa"
 }
+
+variable "addon_version" {
+  type = string
+  default = null
+}
 variable "external_dns_sa" {
   type = string
   default = "external-dns"
@@ -80,4 +85,14 @@ variable "enable_karpenter" {
   type = bool
   default = true
 }
-    
+variable "argocd_version" {
+  type = string
+  default = "null"
+}
+output "argocd_namespace" {
+  value = kubernetes_namespace_v1.argocd.metadata[0].name
+}
+
+output "argocd_release_name" {
+  value = helm_release.argocd.name
+}

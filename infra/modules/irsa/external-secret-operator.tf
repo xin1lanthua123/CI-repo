@@ -91,7 +91,7 @@ resource "helm_release" "external_secrets" {
   atomic          = true
   cleanup_on_fail = true
   wait            = true
-  timeout         = 60
+  timeout         = 300
 
   set {
     name  = "serviceAccount.create"

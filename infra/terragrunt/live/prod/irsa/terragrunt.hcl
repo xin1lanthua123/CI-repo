@@ -17,10 +17,10 @@ inputs = {
   tags                    = include.env.locals.tags
   env                     = include.env.locals.tags.env
   enable_alb_controller   = include.env.locals.irsa.enable_alb_controller
-  enable_dns_external   = include.env.locals.irsa.enable_dns_external
-  enable_ebs_csi_driver = include.env.locals.irsa.enable_ebs_csi_driver
-  enable_eso            = include.env.locals.irsa.enable_eso
-  enable_karpenter      = include.env.locals.irsa.enable_karpenter
+  enable_dns_external     = include.env.locals.irsa.enable_dns_external
+  enable_ebs_csi_driver   = include.env.locals.irsa.enable_ebs_csi_driver
+  enable_eso              = include.env.locals.irsa.enable_eso
+  enable_karpenter        = include.env.locals.irsa.enable_karpenter
   oidc_provider_arn       = dependency.eks_core.outputs.oidc_provider_arn
   oidc_provider_url       = dependency.eks_core.outputs.oidc_provider_url
   cluster_name            = dependency.eks_core.outputs.cluster_name
@@ -28,6 +28,7 @@ inputs = {
   external_secrets_sa     = "external-secrets"
   external_dns_sa         = "external-dns"
   ebs_csi_driver_sa       = "ebs-csi-controller-sa"
+  addon_version           = "2.59.0"
   alb_service_sa          = include.env.locals.service_accounts.alb_service_account
 }
 dependency "eks_core" {

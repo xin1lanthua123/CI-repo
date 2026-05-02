@@ -1,11 +1,6 @@
- module "argocd" {
-  //source = "github.com/aigisuk/terraform-kuberenetes-argocd"
-  source = "aigisuk/argocd/kubernetes"
-}
-
 resource "kubernetes_namespace_v1" "argocd" {
   metadata {
-    name = var.namespace
+    name = "${var.env}-argocd"
 
     labels = {
       "app.kubernetes.io/managed-by" = "terraform"
@@ -17,7 +12,7 @@ resource "helm_release" "argocd" {
   namespace  = kubernetes_namespace_v1.argocd.metadata[0].name
   repository = "https://argoproj.github.io/argo-helm"
   chart      = "argo-cd"
-  version    = var.argocd_version               # "7.8.2"
+  version    = var.helm_argocd_version # "7.8.2"
   create_namespace = false
 
   atomic          = true

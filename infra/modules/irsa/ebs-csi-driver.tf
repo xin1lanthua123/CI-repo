@@ -1,7 +1,7 @@
 # EBS CSI DRIVER IRSA ROLE
 resource "aws_iam_role" "ebs_csi" {
   count = var.enable_ebs_csi_driver ? 1 : 0
-  name = "${var.cluster_name}-ebs-csi-driver-${var.env}"
+  name = "${var.cluster_name}-ebs-csi-driver"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -38,6 +38,6 @@ resource "aws_eks_addon" "ebs_csi" {
   service_account_role_arn = aws_iam_role.ebs_csi[0].arn
   resolve_conflicts_on_create = "OVERWRITE"
   resolve_conflicts_on_update = "OVERWRITE"
-  addon_version = var.addon_version
+  addon_version = var.ebs_csi_version
 
 }

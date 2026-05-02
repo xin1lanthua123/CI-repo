@@ -7,12 +7,13 @@ include "env" {
     merge_strategy = "no_merge"
     }
 terraform {
-    source = "../../../../modules/WAF"
+    source = "../../../../modules/vpc"
 }
 inputs = {
-    project_name = include.env.locals.tags.Project
     tags         = include.env.locals.tags
-    env          = include.env.locals.tags.enve
+    project_name = include.env.locals.tags.Project
+    single_nat_gateway = include.locals.vpc.single_nat_gateway
+    env            = include.env.locals.tags.env
 }
 
      

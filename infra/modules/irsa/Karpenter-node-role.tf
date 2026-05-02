@@ -1,5 +1,6 @@
 resource "aws_iam_role" "karpenter_node" {
-  name = "${var.cluster_name}-karpenter-node-${var.env}"
+  count      = var.enable_karpenter ? 1 : 0
+  name = "${var.cluster_name}-karpenter-node"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -17,21 +18,25 @@ resource "aws_iam_role" "karpenter_node" {
 
 
 resource "aws_iam_role_policy_attachment" "node_worker" {
-  role       = aws_iam_role.karpenter_node.name
+  count      = var.enable_karpenter ? 1 : 0
+  role       = aws_iam_role.karpenter_nodeơ[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
 }
 
 resource "aws_iam_role_policy_attachment" "node_cni" {
-  role       = aws_iam_role.karpenter_node.name
+  count      = var.enable_karpenter ? 1 : 0
+  role       = aws_iam_role.karpenter_node[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
 }
 
 resource "aws_iam_role_policy_attachment" "node_ecr" {
-  role       = aws_iam_role.karpenter_node.name
+  count      = var.enable_karpenter ? 1 : 0
+  role       = aws_iam_role.karpenter_node[0].name
   policy_arn = "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
 }
 
 resource "aws_iam_instance_profile" "karpenter_node" {
-  name = "${var.cluster_name}-karpenter-node-profile-${var.env}"
-  role = aws_iam_role.karpenter_node.name
+  count      = var.enable_karpenter ? 1 : 0
+  name = "${var.cluster_name}-karpenter-node-profile"
+  role = aws_iam_role.karpenter_node[0].name
 }

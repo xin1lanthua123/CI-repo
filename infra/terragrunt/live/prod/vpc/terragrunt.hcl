@@ -12,7 +12,7 @@ terraform {
 inputs = {
     tags         = include.env.locals.tags
     project_name = include.env.locals.tags.Project
-    single_nat_gateway = true
+    single_nat_gateway = include.env.locals.vpc.single_nat_gateway
     env            = include.env.locals.tags.env
 }
 

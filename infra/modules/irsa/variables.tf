@@ -9,6 +9,9 @@ variable "region" {
 variable "vpc_id" {
   type = string
 }
+variable "eks_cluster_arn" {
+  type = string
+}
 variable "cluster_name" {
   type = string
   default = "eks"
@@ -29,7 +32,7 @@ variable "ebs_csi_driver_sa" {
   default = "ebs-csi-controller-sa"
 }
 
-variable "addon_version" {
+variable "ebs_csi_version" {
   type = string
   default = null
 }
@@ -85,14 +88,12 @@ variable "enable_karpenter" {
   type = bool
   default = true
 }
-variable "argocd_version" {
+variable "helm_argocd_version" {
   type = string
   default = "null"
 }
-output "argocd_namespace" {
-  value = kubernetes_namespace_v1.argocd.metadata[0].name
-}
-
-output "argocd_release_name" {
-  value = helm_release.argocd.name
+variable "server_insecure" {
+  type = bool
+  description = "value"
+  default = true
 }

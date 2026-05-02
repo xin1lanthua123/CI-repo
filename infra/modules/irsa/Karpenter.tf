@@ -1,6 +1,6 @@
 resource "aws_iam_role" "karpenter_irsa" {
   count = var.enable_karpenter ? 1 : 0
-  name = "${var.cluster_name}-karpenter-irsa-${var.env}"
+  name = "${var.cluster_name}-karpenter-irsa"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",
@@ -13,7 +13,7 @@ resource "aws_iam_role" "karpenter_irsa" {
         Action = "sts:AssumeRoleWithWebIdentity",
         Condition = {
           StringEquals = {
-            "${local.oidc_host}:sub" = "system:serviceaccount:karpenter:karpenter",
+            "${local.oidc_host}:sub" = "system:serviceaccount:karpenter:${var.karpenter_sa}",
             "${local.oidc_host}:aud" = "sts.amazonaws.com"
           }
         }
@@ -26,7 +26,7 @@ resource "aws_iam_role" "karpenter_irsa" {
 
 resource "aws_iam_policy" "karpenter_policy" {
   count = var.enable_karpenter ? 1 : 0
-  name        = "${var.cluster_name}-karpenter-policy-${var.env}"
+  name        = "${var.cluster_name}-karpenter-policy"
   description = "Allow Karpenter to provision EC2 instances"
 
   policy = jsonencode({
@@ -64,7 +64,7 @@ resource "aws_iam_policy" "karpenter_policy" {
         Action = [
           "eks:DescribeCluster"
         ],
-        Resource = "*"
+        Resource = var.eks_cluster_arn
       },
 
       # Pricing API is used for instance selection
@@ -82,76 +82,15 @@ resource "aws_iam_policy" "karpenter_policy" {
         Action = [
           "iam:PassRole"
         ],
-        Resource = "*"
+        Resource = aws_iam_role.karpenter_node[0].arn
       }
     ]
   })
 }
 
 resource "aws_iam_role_policy_attachment" "karpenter_attach" {
+  count      = var.enable_karpenter ? 1 : 0
   role       = aws_iam_role.karpenter_irsa[0].name
   policy_arn = aws_iam_policy.karpenter_policy[0].arn
 }
 
-resource "kubernetes_namespace_v1" "karpenter" {
-  count = var.enable_karpenter ? 1 : 0
-
-  metadata {
-    name = "karpenter"
-  }
-}
-resource "kubernetes_service_account_v1" "karpenter" {
-  count = var.enable_karpenter ? 1 : 0
-
-  metadata {
-    name      = var.karpenter_sa   
-    namespace = "karpenter"
-
-    annotations = {
-      "eks.amazonaws.com/role-arn" = aws_iam_role.karpenter_irsa[0].arn
-    }
-  }
-}
-
-resource "helm_release" "karpenter" {
-  count = var.enable_karpenter ? 1 : 0
-
-  name       = "karpenter"
-  namespace  = "karpenter"
-  repository = "oci://public.ecr.aws/karpenter"
-  chart      = "karpenter"
-  version    = "1.12.0"
-  atomic          = true
-  cleanup_on_fail = true
-  wait            = true
-  timeout         = 300
-  set {
-    name  = "serviceAccount.create"
-    value = "false"
-  }
-
-  set {
-    name  = "serviceAccount.name"
-    value = var.karpenter_sa            
-  }
-  set {
-    name  = "serviceAccount.annotations.eks\\.amazonaws\\.com/role-arn"
-    value = aws_iam_role.karpenter_irsa[0].arn
-  }
-
-  set {
-    name  = "settings.clusterName"
-    value = var.cluster_name
-  }
-
-  set {
-    name  = "settings.clusterEndpoint"
-    value = data.aws_eks_cluster.eks.endpoint
-  }
-
-  depends_on = [
-    aws_iam_role_policy_attachment.karpenter_attach,
-    kubernetes_service_account_v1.karpenter[0],
-    kubernetes_namespace_v1.karpenter[0]
-  ]
-}

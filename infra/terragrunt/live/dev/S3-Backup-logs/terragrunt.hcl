@@ -7,12 +7,13 @@ include "env" {
     merge_strategy = "no_merge"
     }
 terraform {
-    source = "../../../../modules/WAF"
+    source = "../../../../modules/S3-Backup-logs"
 }
 inputs = {
-    project_name = include.env.locals.tags.Project
+    enable_kms   = include.env.locals.S3_logs.enable_kms
     tags         = include.env.locals.tags
-    env          = include.env.locals.tags.enve
+    project_name = include.env.locals.tags.Project
+    env          =  include.env.locals.tags.env
 }
 
      

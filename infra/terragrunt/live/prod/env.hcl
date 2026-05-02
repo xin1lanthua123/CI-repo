@@ -1,5 +1,13 @@
 
 locals {
+  kms_tags = { 
+    kms_s3_tags = {
+    Name        = "prod-s3-logs-kms"
+    Project     = "my-app"
+    Environment = "prod"
+    ManagedBy   = "terraform"
+  }
+}
   tags = {
     env          = "prod"
     Project      = "my-app"
@@ -44,7 +52,7 @@ locals {
     multi_az       = false
     instance_class = "db.t3.medium"
     db_name        = "prodpostgresdb"
-    db_username    = "myappdb"
+    db_username    = "prodmyappdb"
   }
   eks = {
       cluster_version = "1.30"

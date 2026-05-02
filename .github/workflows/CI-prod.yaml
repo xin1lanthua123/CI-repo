@@ -1,4 +1,4 @@
-name: CI pipeline
+name: Production environment CI pipeline
 on: 
     workflow_dispatch:
       inputs:
@@ -8,7 +8,7 @@ on:
             default: "apply"
             type: choice
             options:
-            - apply
+            - apply-prod
             - bootstrap
             - destroy
 jobs:
@@ -48,10 +48,10 @@ jobs:
             - name: Migrate local state to remote state S3
               working-directory: infra/terragrunt/bootstrap/local
               run: |
-                terragrunt init -migrate-state -force-copy -terragrunt-non-interactive  
-    terraform-apply:
+                terragrunt init -migrate-state -force-copy -terragrunt-non-interactive 
+    apply-prod:
         runs-on: ubuntu-latest
-        if: github.event.inputs.action == 'apply'
+        if: github.event.inputs.action == 'apply-prod'
         steps:
             - name: Checkout
               uses: actions/checkout@v4

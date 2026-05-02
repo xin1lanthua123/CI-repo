@@ -10,10 +10,13 @@ terraform {
     source = "../../../../modules/S3-Backup-logs"
 }
 inputs = {
-    enable_kms   = include.env.locals.S3_logs.enable_kms
-    tags         = include.env.locals.tags
-    project_name = include.env.locals.tags.Project
-    env          =  include.env.locals.tags.env
+    enable_kms     = include.env.locals.S3_logs.enable_kms
+
+    kms_s3_tags    = include.env.locals.kms_tags.kms_s3_tags 
+    tags           = include.env.locals.tags
+    project_name   = include.env.locals.tags.Project
+    env            = include.env.locals.tags.env
+
 }
 
      

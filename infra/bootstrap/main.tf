@@ -3,6 +3,7 @@ resource "aws_kms_key" "tf_state" {
   description = "KMS key for remote state encryption"
   deletion_window_in_days = 7
   enable_key_rotation = true
+  tags = var.kms_state_tags
 }
 
 resource "aws_s3_bucket" "tf_state" {

@@ -14,6 +14,16 @@ variable "tags" {
   ManagedBy   = "terraform"
   }
 }
+variable "kms_s3_tags" {
+  type = map(string)
+  default = {
+    Name        = "s3-logs-kms"
+    Project     = "my-app"
+    Environment = "prod"
+    ManagedBy   = "terraform"
+  }
+}
+
 variable "enable_kms" {
   type = bool
   description = "create kms based on this variable permission"

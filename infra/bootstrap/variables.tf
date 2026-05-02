@@ -20,3 +20,12 @@ variable "github_repo" {
 variable "env" {
   type = string
 }
+variable "kms_state_tags" {
+  type = map(string)
+  default = {
+    Name        = "tfstate-key"
+    Project     = "my-app"
+    Environment = "prod"
+    ManagedBy   = "terraform"
+  }
+}

@@ -12,16 +12,7 @@ terraform {
 inputs = {
     env          = include.env.locals.tags.env
     project_name = include.env.locals.tags.Project
-    db_name = "prod-postgres-db"
-    username = "my-app-db"
+    db_name      = include.env.locals.aws_secret_manager.secret_for_rds.db_name
+    username     = include.env.locals.aws_secret_manager.secret_for_rds.username
 }
 
-# dependency "rds" {
-#     config_path = "../rds"
-#       mock_outputs = {
-#       db_name  = "database123214"
-#       username = "mockname"
-#   }
-
-#   mock_outputs_allowed_terraform_commands = ["plan", "validate", "init"]
-# }

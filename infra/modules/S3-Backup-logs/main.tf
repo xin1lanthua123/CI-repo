@@ -6,9 +6,7 @@ resource "aws_kms_key" "name" {
   description = "KMS key for remote state encryption"
   deletion_window_in_days = 7
   enable_key_rotation = true
-  tags = merge(var.tags,{
-    Name = "${var.project_name}-kms-key"
-})
+  tags = var.kms_s3_tags
 }
 
 

@@ -40,7 +40,7 @@ dependency "vpc" {
 dependency "eks_core" {
     config_path = "../eks_core"
     mock_outputs = {
-    cluster_security_group_id = "sg-00000000000000000"  
+    cluster_security_group_id = "sg-00000000000000000"
   }
 
   mock_outputs_allowed_terraform_commands = ["plan", "validate", "init"]

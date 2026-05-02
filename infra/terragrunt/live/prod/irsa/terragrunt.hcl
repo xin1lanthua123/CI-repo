@@ -45,11 +45,7 @@ dependency "eks_core" {
     
     mock_outputs = {
     cluster_endpoint = "https://mock"
-    cluster_ca       = <<EOF
------BEGIN CERTIFICATE-----
-MIIC...FAKE...CERT
------END CERTIFICATE-----
-EOF
+    cluster_ca       = "LS0tLS1CRUdJTiBDRVJUSUZJQ0FURS0tLS0tCg=="
     eks_cluster_arn = "arn:aws:eks:us-east-1:123456789012:cluster/mock-cluster"
     oidc_provider_arn = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"
     oidc_provider_url = "oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"

@@ -16,6 +16,12 @@ variable "cluster_name" {
   type = string
   default = "eks"
 }
+variable "cluster_endpoint" {
+  type = string
+}
+variable "cluster_ca" {
+  type = string 
+}
 variable "oidc_provider_arn" {
   type = string
 }

@@ -27,6 +27,8 @@ inputs = {
   oidc_provider_arn       = dependency.eks_core.outputs.oidc_provider_arn
   oidc_provider_url       = dependency.eks_core.outputs.oidc_provider_url
   cluster_name            = dependency.eks_core.outputs.cluster_name
+  cluster_ca              = dependency.eks_core.outputs.cluster_ca
+  cluster_endpoint        = dependency.eks_core.outputs.cluster_endpoint
 
   karpenter_sa            = include.env.locals.ỉrsa.service_accounts.karpenter_sa
   external_secrets_sa     = include.env.locals.ỉrsa.service_accounts.external_secrets_sa
@@ -42,6 +44,8 @@ dependency "eks_core" {
     config_path = "../eks_core"
     
     mock_outputs = {
+    cluster_endpoint = "https://mock"
+    cluster_ca       = "bW9jaw==" # base64
     eks_cluster_arn = "arn:aws:eks:ap-southeast-1:123456789012:cluster/mock-cluster"
     oidc_provider_arn = "arn:aws:iam::111111111111:oidc-provider/oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"
     oidc_provider_url = "oidc.eks.ap-southeast-1.amazonaws.com/id/MOCK"

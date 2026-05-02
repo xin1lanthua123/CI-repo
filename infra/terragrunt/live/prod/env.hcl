@@ -30,6 +30,7 @@ locals {
       ebs_csi_version         = "2.59.0"
       helm_argocd_version     = "7.8.2"
       server_insecure         = true
+      external_dns_sa         = "external-dns"
   }
   }
   S3_logs = {

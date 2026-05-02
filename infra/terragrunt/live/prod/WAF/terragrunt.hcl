@@ -12,7 +12,7 @@ terraform {
 inputs = {
     project_name = include.env.locals.tags.Project
     tags         = include.env.locals.tags
-    env          = include.env.locals.tags.enve
+    env          = include.env.locals.tags.env
 }
 
      

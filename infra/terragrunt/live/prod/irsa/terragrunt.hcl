@@ -10,10 +10,10 @@ terraform {
     source = "../../../../modules/irsa"
 }
 inputs = {
-  domain_name             = include.env.locals.irsa.domain_name
+  domain_name             = include.env.locals.irsa.enable_eks_addons.domain_name
   vpc_id                  = dependency.vpc.outputs.vpc_id
   project_name            = include.env.locals.tags.Project
-  region                  = include.env.locals.irsa.region
+  region                  = include.env.locals.irsa.enable_eks_addons.region
   tags                    = include.env.locals.tags
   env                     = include.env.locals.tags.env
 

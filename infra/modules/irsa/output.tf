@@ -7,9 +7,7 @@ output "role_arn" {
 output "externaldns_role_arn" {
   value = aws_iam_role.externaldns_irsa[0].arn
 }
-output "ebs_csi_role_arn" {
-  value = aws_iam_role.ebs_csi[0].arn
-}
+
 output "karpenter_role_arn" {
   value = aws_iam_role.karpenter_irsa[0].arn
 }

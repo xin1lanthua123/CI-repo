@@ -27,7 +27,7 @@ locals {
       karpenter_sa            = "karpenter"
       external_secrets_sa     = "external-secrets"
       ebs_csi_driver_sa       = "ebs-csi-controller-sa"
-      ebs_csi_version         = "2.59.0"
+      ebs_csi_version         = "v1.29.1-eksbuild.2"
       helm_argocd_version     = "7.8.2"
       server_insecure         = true
       external_dns_sa         = "external-dns"

@@ -1,7 +1,3 @@
-
-resource "random_id" "bucket_suffix" {
-  byte_length = 4
-}
 resource "aws_kms_key" "tf_state" {
   count = var.enable_kms ? 1 : 0
   description = "KMS key for remote state encryption"

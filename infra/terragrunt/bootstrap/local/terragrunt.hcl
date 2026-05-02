@@ -1,14 +1,3 @@
-remote_state {
-  backend = "s3"
-  config = {
-    bucket         = "myapp-tf-state-34d0696a"
-    key            = "${path_relative_to_include()}/terraform.tfstate"
-    region         = "us-east-1"
-    dynamodb_table = "myapp-terraform-locks-34d0696a"
-    encrypt        = true
-  }
-}
-
 terraform {
     source = "../../../bootstrap"
 }

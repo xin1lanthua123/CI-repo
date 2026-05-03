@@ -33,7 +33,7 @@ resource "aws_iam_role_policy_attachment" "ebs_csi_attach" {
 
 resource "aws_eks_addon" "ebs_csi" {
   count = var.enable_ebs_csi_driver ? 1 : 0
-  cluster_name             = "prod-my-app-eks"
+  cluster_name             = var.cluster_name            #"prod-my-app-eks"
   addon_name               = "aws-ebs-csi-driver"
   service_account_role_arn = aws_iam_role.ebs_csi[0].arn
   # resolve_conflicts_on_create = "OVERWRITE"

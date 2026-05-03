@@ -14,6 +14,9 @@ variable "tags" {
   ManagedBy   = "terraform"
   }
 }
+variable "kms_key_alias" {
+  type = string
+}
 variable "kms_s3_tags" {
   type = map(string)
   default = {

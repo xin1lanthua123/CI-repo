@@ -8,7 +8,11 @@ resource "aws_kms_key" "name" {
   enable_key_rotation = true
   tags = var.kms_s3_tags
 }
-
+resource "aws_kms_alias" "name" {
+  count = var.enable_kms ? 1 : 0
+  name          = var.kms_key_alias      #"alias/s3-logs-key"
+  target_key_id = aws_kms_key.name[0].key_id
+}
 
 resource "aws_s3_bucket" "logs" {
   bucket = "${var.env}-my-log-bucket-${random_id.this.hex}"

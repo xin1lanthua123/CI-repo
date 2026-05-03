@@ -5,7 +5,11 @@ resource "aws_kms_key" "tf_state" {
   enable_key_rotation = true
   tags = var.kms_state_tags
 }
-
+resource "aws_kms_alias" "tfstate" {
+  count = var.enable_kms ? 1 : 0
+  name          = "alias/tfstate-key"
+  target_key_id = aws_kms_key.tf_state[0].key_id
+}
 resource "aws_s3_bucket" "tf_state" {
   bucket = "${var.project_name}-terraform-tf-state"
     tags = {

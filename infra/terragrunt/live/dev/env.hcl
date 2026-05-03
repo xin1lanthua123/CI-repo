@@ -1,7 +1,9 @@
 
 locals {
   kms_tags = { 
+    kms_key_alias = "alias/s3-logs-key"
     kms_s3_tags = {
+    
     Name        = "dev-s3-logs-kms"
     Project     = "my-app"
     Environment = "dev"
@@ -22,6 +24,7 @@ locals {
   }
   irsa = { 
     enable_eks_addons = {
+      cluster_name          = "dev-my-app-eks"
       domain_name           = "quanldl.uk"
       region                = "us-east-1"
       enable_alb_controller = true

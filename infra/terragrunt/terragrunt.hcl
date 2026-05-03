@@ -1,11 +1,12 @@
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "myapp-terraform-tf-state"
+    bucket         = "bucket"
     key            = "${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "myapp-terraform-locks"
+    dynamodb_table = "dynamodblock"
     encrypt        = true
+    kms_key_id     = "kmskey"
   }
 }
 
@@ -31,3 +32,4 @@ terraform {
 }
 EOT
 }
+

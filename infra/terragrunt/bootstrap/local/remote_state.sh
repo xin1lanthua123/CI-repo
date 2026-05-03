@@ -1,7 +1,15 @@
 BUCKET=$(terragrunt output -raw tfstate_bucket_name)
 DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
+KMS_KEY=$(terragrunt output -raw aws_kms_key)
+
 echo "S3 bucket : $BUCKET"
 echo "DynamoDB lock :$DYNAMODB_LOCK"
+echo "KMS arn of tf state : $KMS_KEY"
+
+[ -z "$BUCKET" ] && echo "BUCKET is empty" && exit 1
+[ -z "$DYNAMODB_LOCK" ] && echo "DYNAMODB_LOCK is empty" && exit 1
+[ -z "$KMS_KEY" ] && echo "KMS_KEY is empty" && exit 1
+
 
 cat > ../../../bootstrap/backend.tf <<EOF
 terraform {
@@ -21,7 +29,7 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "$DYNAMODB_LOCK"
     encrypt        = true
-    kms_key_id     = "alias/tfstate-key"
+    kms_key_id     = "$KMS_KEY"
   }
 }
 
@@ -45,3 +53,4 @@ inputs = {
 EOF
 
 echo "successfully generated remote boostrap state"
+

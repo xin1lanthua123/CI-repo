@@ -52,6 +52,8 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               shell: bash
               run: |
+                set -euo pipefail
+                terragrunt plan --terragrunt-non-interactive
                 terragrunt apply --auto-approve -terragrunt-non-interactive
             - name: set up config for state migration
               working-directory: infra/terragrunt/bootstrap/local
@@ -87,6 +89,13 @@ jobs:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ inputs.aws_region }}
+
+            - name: Update the root remote state config
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                  chmod +x remote_state.sh
+                  ./root_state.sh
 
             - name: Plan terraform infra using terragrunt
               shell: bash
@@ -128,6 +137,7 @@ jobs:
               working-directory: infra/terragrunt/live/${{ inputs.env }}
               shell: bash
               run: |
+                set -euo pipefail
                 terragrunt run-all destroy -auto-approve --terragrunt-non-interactive
             
             

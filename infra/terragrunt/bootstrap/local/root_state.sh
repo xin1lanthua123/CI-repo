@@ -1,13 +1,13 @@
 set -euo pipefail
-KMS_KEY=$(terragrunt output -raw aws_kms_key )
+# KMS_KEY=$(terragrunt output -raw aws_kms_key )
 
-# Kiểm tra nếu KMS_KEY rỗng
-if [ -z "$KMS_KEY" ]; then
-  echo "KMS key is empty"
-  exit 1
-fi
+# # Kiểm tra nếu KMS_KEY rỗng
+# if [ -z "$KMS_KEY" ]; then
+#   echo "KMS key is empty"
+#   exit 1
+# fi
 
-echo "KMS arn of tf state: $KMS_KEY"
+# echo "KMS arn of tf state: $KMS_KEY"
 
 
 
@@ -26,7 +26,6 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "myapp-terraform-locks"
     encrypt        = true
-    kms_key_id     = "$KMS_KEY"
   }
 }
 

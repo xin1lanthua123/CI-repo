@@ -1,0 +1,28 @@
+name: Production environment CI pipeline
+on: 
+    workflow_dispatch:
+      inputs:
+        action:
+            description: "Terraform action"
+            required: true
+            default: "apply"
+            type: choice
+            options:
+            - apply-ENV
+            - bootstrap
+            - destroy-ENV
+        env:
+            description: "environment"
+            required: true
+            default: "dev"
+            type: choice
+            options:
+                - dev
+                - prod
+jobs:
+    call-terraform:
+        uses: ./.github/workflows/workflow-call.yaml
+        with: 
+            env : ${{ inputs.env }}
+            action: ${{ inputs.action }}
+        secrets: inherit

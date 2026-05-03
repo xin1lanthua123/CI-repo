@@ -1,0 +1,143 @@
+name: Reusable workflow CICD pipeline
+on: 
+    workflow_call:
+      inputs:
+        action:
+            description: "Terraform action"
+            required: true
+            default: "apply-ENV"
+            type: string
+        env:
+            description: "environment"
+            required: true
+            default: "dev"
+            type: string
+      secrets:
+        AWS_ACCESS_KEY_ID:
+            required: true
+           
+        AWS_SECRET_ACCESS_KEY:
+            required: true
+      
+jobs:
+    terraform-bootstrap:
+        runs-on: ubuntu-latest
+        if: inputs.action == 'bootstrap'
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+
+            - name: Apply terraform bootstrap using terragrunt
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                terragrunt apply --auto-approve -terragrunt-non-interactive
+            - name: set up config for state migration
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                chmod +x remote_state.sh
+                ./remote_state.sh
+
+            - name: Migrate local state to remote state S3
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                terragrunt init -migrate-state -force-copy -terragrunt-non-interactive 
+    apply-env:
+        runs-on: ubuntu-latest
+        if: inputs.action == 'apply-ENV'
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+
+            - name: Plan terraform infra using terragrunt
+              shell: bash
+              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              run: |
+                terragrunt run-all plan --terragrunt-non-interactive
+            
+
+            - name: Apply terraform infra using terragrunt
+              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              shell: bash
+              run: |
+               
+                terragrunt run-all apply -auto-approve --terragrunt-non-interactive
+    destroy-env:
+        runs-on: ubuntu-latest
+        if: inputs.action == 'destroy-ENV'
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v4
+
+            - name: Setup Terraform
+              uses: hashicorp/setup-terraform@v3
+
+            - name: Install Terragrunt and OpenTofu
+              uses: gruntwork-io/terragrunt-action@v3
+              with:
+                    tg_version: '0.82.2'
+                    tofu_version: '1.10.1'
+
+            - name: Configure AWS Credentials
+              uses: aws-actions/configure-aws-credentials@v4
+              with:
+                aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+                aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+                aws-region: ${{ vars.AWS_REGION }}
+
+            - name: Destroy terraform infra using terragrunt
+              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              shell: bash
+              run: |
+                terragrunt run-all destroy -auto-approve --terragrunt-non-interactive
+            
+            
+            - name: Destroy terraform bootstrap using terragrunt
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                terragrunt destroy -auto-approve --terragrunt-non-interactive
+            
+            - name: destroy all s3 bucket versioning
+              working-directory: infra/terragrunt
+              shell: bash
+              run: |
+                set -euo pipefail
+                chmod +x delete-s3.sh
+                ./delete-s3.sh
+
+            

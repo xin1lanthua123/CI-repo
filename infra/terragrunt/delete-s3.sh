@@ -6,7 +6,7 @@ STATIC_BUCKETS=(
   "myapp-terraform-tf-state"
 )
 
-PREFIX="prod-my-log-bucket-"
+PREFIX="dev-my-log-bucket-"
 
 echo "⚠️ Bắt đầu xoá S3 buckets..."
 

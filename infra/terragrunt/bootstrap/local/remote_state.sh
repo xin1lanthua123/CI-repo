@@ -21,6 +21,7 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "$DYNAMODB_LOCK"
     encrypt        = true
+    kms_key_id     = "alias/tfstate-key"
   }
 }
 

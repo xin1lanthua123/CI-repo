@@ -53,7 +53,7 @@ locals {
   rds = {
     engine_version = "15"
     multi_az       = false
-    instance_class = "db.t3.medium"
+    instance_class = "db.t3.micro"
     db_name        = "devpostgresdb"
     db_username    = "devmyappdb"
   }
@@ -62,7 +62,7 @@ locals {
       enable_irsa     = true
       node_groups = {
         group1 = {
-          node_instance_type = "t3.micro"
+          node_instance_type = "t3.medium"
           desired_size       = 2
           min_size           = 1
           max_size           = 3

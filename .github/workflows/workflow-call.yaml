@@ -59,7 +59,7 @@ jobs:
               shell: bash
               run: |
                 set -euo pipefail
-               
+                trap 'echo "Apply failed, destroying resources..."; terragrunt destroy --auto-approve --terragrunt-non-interactive' ERR
                 terragrunt apply --auto-approve -terragrunt-non-interactive
             - name: set up config for state migration
               working-directory: infra/terragrunt/bootstrap/local

@@ -1,5 +1,5 @@
 resource "random_id" "suffix" {
-  byte_length = 4
+  byte_length = 8
 }
 resource "aws_kms_key" "tf_state" {
   count = var.enable_kms ? 1 : 0

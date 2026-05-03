@@ -1,5 +1,5 @@
 set -euo pipefail
-KMS_KEY=$(terragrunt output -raw aws_kms_key | tr -d '\n')
+KMS_KEY=$(terragrunt output -raw aws_kms_key | tr -d '\n'| sed 's/\x1b\[[0-9;]*m//g')
 
 # Kiểm tra nếu KMS_KEY rỗng
 if [ -z "$KMS_KEY" ]; then

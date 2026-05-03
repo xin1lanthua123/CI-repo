@@ -12,7 +12,7 @@ output "lock_table_name" {
 }
 
 output "aws_kms_key" {
-  value = try(aws_kms_key.tf_state[0].arn,null)
+  value = try(aws_kms_key.tf_state[0].key_id,null)
 }
 output "github_action_infra_role_arn" {
   value = aws_iam_role.github_actions_infra.arn

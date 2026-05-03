@@ -10,7 +10,7 @@ resource "aws_kms_key" "tf_state" {
 }
 resource "aws_kms_alias" "tfstate" {
   count = var.enable_kms ? 1 : 0
-  name          = "alias/tfstate-key"
+  name          = "alias/tfstate-key-${random_id.suffix.hex}"
   target_key_id = aws_kms_key.tf_state[0].key_id
 }
 resource "aws_s3_bucket" "tf_state" {

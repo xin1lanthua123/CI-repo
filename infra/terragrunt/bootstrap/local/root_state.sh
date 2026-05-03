@@ -1,5 +1,5 @@
 set -euo pipefail
-KMS_KEY=$(terragrunt output -raw aws_kms_key | tr -d '\n'| sed 's/\x1b\[[0-9;]*m//g')
+KMS_KEY=$(terragrunt output -raw aws_kms_key )
 
 # Kiểm tra nếu KMS_KEY rỗng
 if [ -z "$KMS_KEY" ]; then
@@ -8,7 +8,7 @@ if [ -z "$KMS_KEY" ]; then
 fi
 
 echo "KMS arn of tf state: $KMS_KEY"
-\
+
 
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"

@@ -1,9 +1,5 @@
 set -euo pipefail
 
-KMS_KEY=$(terragrunt output -raw aws_kms_key )
-echo "KMS arn of tf state : $KMS_KEY"
-
-
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../" && pwd)"
 
@@ -19,7 +15,7 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "myapp-terraform-locks"
     encrypt        = true
-    kms_key_id     = "$KMS_KEY"
+    kms_key_id     = "alias/tfstate-key"
   }
 }
 

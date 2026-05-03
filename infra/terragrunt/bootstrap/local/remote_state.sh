@@ -1,14 +1,4 @@
-BUCKET=$(terragrunt output -raw tfstate_bucket_name)
-DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
-KMS_KEY=$(terragrunt output -raw aws_kms_key)
-
-echo "S3 bucket : $BUCKET"
-echo "DynamoDB lock :$DYNAMODB_LOCK"
-echo "KMS arn of tf state : $KMS_KEY"
-
-[ -z "$BUCKET" ] && echo "BUCKET is empty" && exit 1
-[ -z "$DYNAMODB_LOCK" ] && echo "DYNAMODB_LOCK is empty" && exit 1
-[ -z "$KMS_KEY" ] && echo "KMS_KEY is empty" && exit 1
+set -euo pipefail
 
 
 cat > ../../../bootstrap/backend.tf <<EOF
@@ -24,12 +14,12 @@ cat > terragrunt.hcl <<EOF
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "$BUCKET"
+    bucket         = "myapp-terraform-tf-state"
     key            = "\${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "$DYNAMODB_LOCK"
+    dynamodb_table = "myapp-terraform-locks"
     encrypt        = true
-    kms_key_id     = "$KMS_KEY"
+    kms_key_id     = "alias/tfstate-key"
   }
 }
 

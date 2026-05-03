@@ -60,44 +60,44 @@ policy = jsonencode({
 })
 }
 
-data "aws_iam_policy_document" "kms" {
+# data "aws_iam_policy_document" "kms" {
 
-  statement {
-    sid = "AllowRootAccess"
-    effect = "Allow"
+#   statement {
+#     sid = "AllowRootAccess"
+#     effect = "Allow"
 
-    principals {
-      type        = "AWS"
-      identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
-    }
+#     principals {
+#       type        = "AWS"
+#       identifiers = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:root"]
+#     }
 
-    actions = ["kms:*"]
+#     actions = ["kms:*"]
 
-    resources = ["*"]
-  }
+#     resources = ["*"]
+#   }
 
-  statement {
-    sid = "AllowTerraformRoleUseKey"
-    effect = "Allow"
+#   statement {
+#     sid = "AllowTerraformRoleUseKey"
+#     effect = "Allow"
 
-    principals {
-      type        = "AWS"
-      identifiers = [aws_iam_role.github_actions_bootstrap.arn]
-    }
+#     principals {
+#       type        = "AWS"
+#       identifiers = [aws_iam_role.github_actions_bootstrap.arn]
+#     }
 
-    actions = [
-      "kms:Encrypt",
-      "kms:Decrypt",
-      "kms:GenerateDataKey",
-      "kms:DescribeKey"
-    ]
+#     actions = [
+#       "kms:Encrypt",
+#       "kms:Decrypt",
+#       "kms:GenerateDataKey",
+#       "kms:DescribeKey"
+#     ]
 
-    resources = ["*"]
-  }
-}
-resource "aws_kms_key_policy" "this" {
-  key_id = aws_kms_key.tf_state[0].arn
-  policy = data.aws_iam_policy_document.kms.json
-}
+#     resources = ["*"]
+#   }
+# }
+# resource "aws_kms_key_policy" "this" {
+#   key_id = aws_kms_key.tf_state[0].arn
+#   policy = data.aws_iam_policy_document.kms.json
+# }
 
 

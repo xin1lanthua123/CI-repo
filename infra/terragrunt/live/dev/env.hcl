@@ -53,7 +53,7 @@ locals {
   rds = {
     engine_version = "15"
     multi_az       = false
-    instance_class = "db.t3.micro"
+    instance_class = "db.t3.medium"
     db_name        = "devpostgresdb"
     db_username    = "devmyappdb"
   }

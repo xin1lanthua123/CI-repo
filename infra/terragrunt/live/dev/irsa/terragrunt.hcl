@@ -16,8 +16,6 @@ inputs = {
   region                  = include.env.locals.irsa.enable_eks_addons.region
   tags                    = include.env.locals.tags
   env                     = include.env.locals.tags.env
-  cluster_name            = include.env.locals.irsa.enable_eks_addons.cluster_name
-
   enable_alb_controller   = include.env.locals.irsa.enable_eks_addons.enable_alb_controller
   enable_dns_external     = include.env.locals.irsa.enable_eks_addons.enable_dns_external
   enable_ebs_csi_driver   = include.env.locals.irsa.enable_eks_addons.enable_ebs_csi_driver

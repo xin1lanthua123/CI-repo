@@ -1,4 +1,8 @@
-set -euo pipefail
+BUCKET=$(terragrunt output -raw tfstate_bucket_name)
+DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
+KMS_KEY=$(terragrunt output -raw aws_kms_key)
+echo "S3 bucket : $BUCKET"
+echo "DynamoDB lock :$DYNAMODB_LOCK"
 
 
 cat > ../../../bootstrap/backend.tf <<EOF
@@ -14,12 +18,12 @@ cat > terragrunt.hcl <<EOF
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "myapp-terraform-tf-state"
+    bucket         = "$BUCKET"
     key            = "\${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "myapp-terraform-locks"
+    dynamodb_table = "$DYNAMODB_LOCK"
     encrypt        = true
-    kms_key_id     = "alias/tfstate-key"
+    kms_key_id     = "$KMS_KEY"
   }
 }
 

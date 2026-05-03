@@ -4,7 +4,7 @@ locals {
 
 resource "aws_iam_role" "alb_irsa_role" {
   count = var.enable_alb_controller? 1 : 0
-  name = "${var.env}-${var.cluster_name}-alb-irsa-role"
+  name = "${var.cluster_name}-alb-irsa-role"
 
   assume_role_policy = jsonencode({
     Version = "2012-10-17",

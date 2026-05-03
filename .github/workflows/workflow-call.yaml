@@ -138,6 +138,12 @@ jobs:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ inputs.aws_region }}
+            - name: Update the root remote state config
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                  chmod +x root_state.sh
+                  ./root_state.sh
 
             - name: Destroy terraform infra using terragrunt
               working-directory: infra/terragrunt/live/${{ inputs.env }}

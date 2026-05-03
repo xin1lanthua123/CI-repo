@@ -1,9 +1,8 @@
 set -euo pipefail
 
-KMS_KEY=$(terragrunt output -raw aws_kms_key | exit 1 )
+KMS_KEY=$(terragrunt output -raw aws_kms_key )
 echo "KMS arn of tf state : $KMS_KEY"
 
-[ -z "$KMS_KEY" ] && echo "KMS_KEY is empty" && exit 1
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../" && pwd)"

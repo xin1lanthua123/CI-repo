@@ -65,7 +65,7 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               shell: bash
               run: |
-                chmod +x remote_state.sh
+                chmod +x remote_state.sh 
                 ./remote_state.sh
 
             - name: Migrate local state to remote state S3
@@ -100,7 +100,7 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               shell: bash
               run: |
-                  chmod +x remote_state.sh
+                  chmod +x root_state.sh
                   ./root_state.sh
 
             - name: Plan terraform infra using terragrunt

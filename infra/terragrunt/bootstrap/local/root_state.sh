@@ -1,6 +1,6 @@
 set -euo pipefail
 
-KMS_KEY=$(terragrunt output -raw aws_kms_key )
+KMS_KEY=$(terragrunt output -raw aws_kms_key | exit 1 )
 echo "KMS arn of tf state : $KMS_KEY"
 
 [ -z "$KMS_KEY" ] && echo "KMS_KEY is empty" && exit 1

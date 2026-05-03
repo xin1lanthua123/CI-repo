@@ -19,10 +19,16 @@ on:
             options:
                 - dev
                 - prod
+concurrency:
+  group: terraform-${{ inputs.env }}
+  cancel-in-progress: false
 jobs:
     call-terraform:
         uses: ./.github/workflows/workflow-call.yaml
         with: 
             env : ${{ inputs.env }}
             action: ${{ inputs.action }}
+            aws_region: ${{ vars.AWS_REGION }}
         secrets: inherit
+    
+           

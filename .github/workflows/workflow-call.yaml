@@ -8,17 +8,22 @@ on:
             default: "apply-ENV"
             type: string
         env:
-            description: "environment"
+            description: "environment (prod or dev)"
             required: true
             default: "dev"
             type: string
+        aws_region:
+            description: "AWS region"
+            required: true
+            type: string
+
+
+      
       secrets:
         AWS_ACCESS_KEY_ID:
-            required: true
-           
+          required: true
         AWS_SECRET_ACCESS_KEY:
-            required: true
-      
+          required: true
 jobs:
     terraform-bootstrap:
         runs-on: ubuntu-latest
@@ -41,7 +46,7 @@ jobs:
               with:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws-region: ${{ vars.AWS_REGION }}
+                aws-region: ${{ inputs.aws_region }}
 
             - name: Apply terraform bootstrap using terragrunt
               working-directory: infra/terragrunt/bootstrap/local
@@ -81,7 +86,7 @@ jobs:
               with:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws-region: ${{ vars.AWS_REGION }}
+                aws-region: ${{ inputs.aws_region }}
 
             - name: Plan terraform infra using terragrunt
               shell: bash
@@ -117,7 +122,7 @@ jobs:
               with:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-                aws-region: ${{ vars.AWS_REGION }}
+                aws-region: ${{ inputs.aws_region }}
 
             - name: Destroy terraform infra using terragrunt
               working-directory: infra/terragrunt/live/${{ inputs.env }}

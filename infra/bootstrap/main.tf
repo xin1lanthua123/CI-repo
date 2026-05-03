@@ -4,7 +4,7 @@ resource "random_id" "suffix" {
 resource "aws_kms_key" "tf_state" {
   count = var.enable_kms ? 1 : 0
   description = "KMS key for remote state encryption"
-  # deletion_window_in_days = 7
+  deletion_window_in_days = 7
   enable_key_rotation = true
   rotation_period_in_days = 10
   tags = var.kms_state_tags

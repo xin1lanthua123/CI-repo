@@ -60,13 +60,18 @@ jobs:
               run: |
                 set -euo pipefail
                 trap 'echo "Apply failed, destroying resources..."; terragrunt destroy --auto-approve --terragrunt-non-interactive' ERR
-                terragrunt apply --auto-approve -terragrunt-non-interactive
+                terragrunt apply --auto-approve --terragrunt-non-interactive
+                
+                terragrunt init -reconfigure
 
-            - name: Extract output from local boostrap state
-              working-directory: infra/terragrunt/bootstrap/local
-              shell: bash
-              run: |
                 terragrunt output -json > bootstrap.json
+
+            # - name: Extract output from local boostrap state
+            #   working-directory: infra/terragrunt/bootstrap/local
+            #   shell: bash
+            #   run: |
+            #     terragrunt init -reconfigure
+            #     terragrunt output -json > bootstrap.json
 
             - name: Artifact Upload
               uses: actions/upload-artifact@v4

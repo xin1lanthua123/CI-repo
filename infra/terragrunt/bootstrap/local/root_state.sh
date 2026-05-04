@@ -38,16 +38,20 @@ provider "aws" {
 }
 EOT
 }
-generate "backend" {
-  path      = "backend.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<EOT
-terraform {
-  backend "s3" {}
-}
-EOT
-}
+
 
 EOF
 
 echo "successfully generated remote root state"
+
+
+
+# generate "backend" {
+#   path      = "backend.tf"
+#   if_exists = "overwrite_terragrunt"
+#   contents  = <<EOT
+# terraform {
+#   backend "s3" {}
+# }
+# EOT
+# }

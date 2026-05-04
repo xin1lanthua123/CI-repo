@@ -1,3 +1,9 @@
+dependency "readconfig" {
+  config_path = "../modules/readconfig"
+}
+locals {
+  kms_key_id = dependency.readconfig.outputs.kms_key_id
+}
 remote_state {
   backend = "s3"
   config = {
@@ -6,7 +12,7 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "myapp-terraform-locks"
     encrypt        = true
-    kms_key_id     = "471882f9-6253-44b3-8f50-646785f0b846"
+    kms_key_id     = "${local.kms_key_id}"
   }
 }
 
@@ -23,13 +29,13 @@ provider "aws" {
 }
 EOT
 }
-generate "backend" {
-  path      = "backend.tf"
-  if_exists = "overwrite_terragrunt"
-  contents  = <<EOT
-terraform {
-  backend "s3" {}
-}
-EOT
-}
+# generate "backend" {
+#   path      = "backend.tf"
+#   if_exists = "overwrite_terragrunt"
+#   contents  = <<EOT
+# terraform {
+#   backend "s3" {}
+# }
+# EOT
+# }
 

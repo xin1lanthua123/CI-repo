@@ -5,6 +5,7 @@ echo "S3 bucket : $BUCKET"
 echo "DynamoDB lock :$DYNAMODB_LOCK"
 
 
+
 cat > ../../../bootstrap/backend.tf <<EOF
 terraform {
   backend "s3" {

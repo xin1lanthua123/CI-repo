@@ -62,7 +62,7 @@ locals {
       enable_irsa     = true
       node_groups = {
         group1 = {
-          node_instance_type = "t3.medium"
+          node_instance_type = "t3.micro"
           desired_size       = 2
           min_size           = 1
           max_size           = 3

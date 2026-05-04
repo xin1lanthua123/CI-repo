@@ -1,7 +1,9 @@
 
 locals {
   kms_tags = { 
+    kms_key_alias = "alias/s3-logs-key"
     kms_s3_tags = {
+    
     Name        = "prod-s3-logs-kms"
     Project     = "my-app"
     Environment = "prod"
@@ -15,13 +17,14 @@ locals {
   }
   aws_secret_manager = {
     secret_for_rds = {
-      db_name = "prod-postgres-db"
-      username = "my-app-db"
+      db_name = "prodpostgresdb"
+      username = "prodmyappdb"
       password = "set up in secret manager module"
     }
   }
   irsa = { 
     enable_eks_addons = {
+      cluster_name          = "prod-my-app-eks"
       domain_name           = "quanldl.uk"
       region                = "us-east-1"
       enable_alb_controller = true

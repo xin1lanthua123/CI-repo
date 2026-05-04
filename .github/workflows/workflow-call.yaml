@@ -152,7 +152,21 @@ jobs:
                 set -euo pipefail
                 terragrunt run-all destroy -auto-approve --terragrunt-non-interactive
             
-            
+            - name: Reupdate terraform bootstrap state using bash script
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                set -euo pipefail
+                chmod +x back_to_localstate.sh
+                ./back_to_localstate.sh
+
+            - name: Migrate backend s3 back to local
+              working-directory: infra/terragrunt/bootstrap/local
+              shell: bash
+              run: |
+                set -euo pipefail
+                terragrunt init -migrate-state -force-copy -terragrunt-non-interactive 
+
             - name: Destroy terraform bootstrap using terragrunt
               working-directory: infra/terragrunt/bootstrap/local
               shell: bash

@@ -1,16 +1,11 @@
 set -euo pipefail
-# KMS_KEY=$(terragrunt output -raw aws_kms_key )
 
-# # Kiểm tra nếu KMS_KEY rỗng
-# if [ -z "$KMS_KEY" ]; then
-#   echo "KMS key is empty"
-#   exit 1
-# fi
-
-# echo "KMS arn of tf state: $KMS_KEY"
-
-
-
+BUCKET=$(terragrunt output -raw tfstate_bucket_name)
+DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
+KMS_KEY=$(terragrunt output -raw aws_kms_key)
+echo "S3 bucket : $BUCKET"
+echo "DynamoDB lock :$DYNAMODB_LOCK"
+echo "KMS key : $KMS_KEY"
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 ROOT_DIR="$(cd "$SCRIPT_DIR/../../" && pwd)"
 
@@ -21,11 +16,12 @@ cat > "$ROOT_DIR/terragrunt.hcl" <<EOF
 remote_state {
   backend = "s3"
   config = {
-    bucket         = "myapp-terraform-tf-state"
+    bucket         = "$BUCKET"
     key            = "\${path_relative_to_include()}/terraform.tfstate"
     region         = "us-east-1"
-    dynamodb_table = "myapp-terraform-locks"
+    dynamodb_table = "$DYNAMODB_LOCK"
     encrypt        = true
+    kms_key_id     = "$KMS_KEY"
   }
 }
 

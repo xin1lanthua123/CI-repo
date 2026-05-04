@@ -1,9 +1,4 @@
-dependency "readconfig" {
-  config_path = "../modules/readconfig"
-}
-locals {
-  kms_key_id = dependency.readconfig.outputs.kms_key_id
-}
+
 remote_state {
   backend = "s3"
   config = {

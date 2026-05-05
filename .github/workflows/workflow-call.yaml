@@ -94,7 +94,7 @@ jobs:
               run: |
                 terragrunt init -migrate-state -force-copy -terragrunt-non-interactive 
 
-                terragrunt destroy -auto-approve --terragrunt-non-interactive
+                # terragrunt destroy -auto-approve --terragrunt-non-interactive
     apply-env:
         runs-on: ubuntu-latest
         if: inputs.action == 'apply-ENV'
@@ -145,7 +145,8 @@ jobs:
               working-directory: infra/terragrunt/us-east-1/${{ inputs.env }}
               shell: bash
               run: |
-               
+                set -euo pipefail
+                trap 'echo "Apply failed, destroying resources..."; terragrunt destroy --auto-approve --terragrunt-non-interactive' ERR
                 terragrunt run-all apply -auto-approve --terragrunt-non-interactive
     destroy-env:
         runs-on: ubuntu-latest

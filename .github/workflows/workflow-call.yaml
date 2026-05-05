@@ -62,9 +62,9 @@ jobs:
                 trap 'echo "Apply failed, destroying resources..."; terragrunt destroy --auto-approve --terragrunt-non-interactive' ERR
                 terragrunt apply --auto-approve --terragrunt-non-interactive
                 
-                terragrunt init -reconfigure
+                # terragrunt init -reconfigure
 
-                terragrunt output -json > /bootstrap.json
+                # terragrunt output -json > bootstrap.json
 
             # mv bootstrap.json $GITHUB_WORKSPACE/bootstrap.json
 
@@ -75,11 +75,11 @@ jobs:
             #     terragrunt init -reconfigure
             #     terragrunt output -json > bootstrap.json
 
-            - name: Artifact Upload
-              uses: actions/upload-artifact@v4
-              with:
-                name: bootstrap-state
-                path: infra/terragrunt/bootstrap/local/bootstrap.json
+            # - name: Artifact Upload
+            #   uses: actions/upload-artifact@v4
+            #   with:
+            #     name: bootstrap-state
+            #     path: infra/terragrunt/bootstrap/local/bootstrap.json
 
             - name: set up config for state migration
               working-directory: infra/terragrunt/bootstrap/local
@@ -121,28 +121,28 @@ jobs:
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ inputs.aws_region }}
 
-            - name: Download Artifact of boostrap state from the job 1
-              uses: actions/download-artifact@v4
-              with:
-                name: bootstrap-state
+            # - name: Download Artifact of boostrap state from the job 1
+            #   uses: actions/download-artifact@v4
+            #   with:
+            #     name: bootstrap-state
 
-            - name: Update the root remote state config
-              working-directory: infra/terragrunt/bootstrap/local
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  chmod +x json_state.sh
-                  ./json_state.sh
+            # - name: Update the root remote state config
+            #   working-directory: infra/terragrunt/bootstrap/local
+            #   shell: bash
+            #   run: |
+            #       set -euo pipefail
+            #       chmod +x json_state.sh
+            #       ./json_state.sh
 
             - name: Plan terraform infra using terragrunt
               shell: bash
-              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              working-directory: infra/terragrunt/us-east-1/${{ inputs.env }}
               run: |
                 terragrunt run-all plan --terragrunt-non-interactive
             
 
             - name: Apply terraform infra using terragrunt
-              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              working-directory: infra/terragrunt/us-east-1/${{ inputs.env }}
               shell: bash
               run: |
                
@@ -169,21 +169,21 @@ jobs:
                 aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
                 aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
                 aws-region: ${{ inputs.aws_region }}
-            - name: Download Artifact of boostrap state from the job 1
-              uses: actions/download-artifact@v4
-              with:
-                name: bootstrap-state
+            # - name: Download Artifact of boostrap state from the job 1
+            #   uses: actions/download-artifact@v4
+            #   with:
+            #     name: bootstrap-state
 
-            - name: Update the root remote state config
-              working-directory: infra/terragrunt/bootstrap/local
-              shell: bash
-              run: |
-                  set -euo pipefail
-                  chmod +x json_state.sh
-                  ./json_state.sh
+            # - name: Update the root remote state config
+            #   working-directory: infra/terragrunt/bootstrap/local
+            #   shell: bash
+            #   run: |
+            #       set -euo pipefail
+            #       chmod +x json_state.sh
+            #       ./json_state.sh
 
             - name: Destroy terraform infra using terragrunt
-              working-directory: infra/terragrunt/live/${{ inputs.env }}
+              working-directory: infra/terragrunt/us-east-1/${{ inputs.env }}
               shell: bash
               run: |
                 set -euo pipefail
@@ -208,6 +208,7 @@ jobs:
               working-directory: infra/terragrunt/bootstrap/local
               shell: bash
               run: |
+                
                 terragrunt destroy -auto-approve --terragrunt-non-interactive
             
             - name: destroy all s3 bucket versioning

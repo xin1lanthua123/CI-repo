@@ -1,6 +1,6 @@
 BUCKET=$(terragrunt output -raw tfstate_bucket_name)
 DYNAMODB_LOCK=$(terragrunt output -raw lock_table_name)
-KMS_KEY=$(terragrunt output -raw aws_kms_key)
+# KMS_KEY=$(terragrunt output -raw aws_kms_key)
 echo "S3 bucket : $BUCKET"
 echo "DynamoDB lock :$DYNAMODB_LOCK"
 
@@ -24,7 +24,7 @@ remote_state {
     region         = "us-east-1"
     dynamodb_table = "$DYNAMODB_LOCK"
     encrypt        = true
-    kms_key_id     = "$KMS_KEY"
+    
   }
 }
 

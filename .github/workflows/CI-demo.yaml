@@ -1,0 +1,353 @@
+name: Microservices-CI
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+  push:
+    branches: [dev, staging, main]
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.extract.outputs.services }}
+      changed: ${{ steps.extract.outputs.changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d #vv4.0.1
+        with:
+          list-files: shell
+          filters: |
+            services:
+              - 'services/**'
+
+      - name: Extract service list from changed files
+        id: extract
+        run: |
+            set -e
+
+            # files that changed under services/**
+            FILES="${{ steps.filter.outputs.services_files }}"
+
+            if [ -z "$FILES" ]; then
+            echo "changed=false " >> $GITHUB_OUTPUT
+            echo "services=[]" >> $GITHUB_OUTPUT
+            exit 0
+            fi
+
+            echo "Changed files:"
+            echo "$FILES"
+
+            # extract unique service names
+            SERVICES=$(echo "$FILES" \
+            | tr ' ' '\n' \
+            | cut -d'/' -f2 \
+            | sort -u \
+            | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+            if [ "$SERVICES" = "[]" ]; then
+            echo "changed=false" >> $GITHUB_OUTPUT
+            else
+            echo "changed=true" >> $GITHUB_OUTPUT
+            fi
+
+            echo "services=$SERVICES" >> $GITHUB_OUTPUT
+            echo "Detected services: $SERVICES"
+
+        
+
+
+  unit-test:
+    name: Unit Test
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Detect language
+        id: lang
+        run: |
+          if [ -f "services/${{ matrix.service }}/package.json" ]; then
+            echo "lang=node" >> $GITHUB_OUTPUT
+          elif [ -f "services/${{ matrix.service }}/go.mod" ]; then
+            echo "lang=go" >> $GITHUB_OUTPUT
+          elif [ -f "services/${{ matrix.service }}/requirements.txt" ]; then
+            echo "lang=python" >> $GITHUB_OUTPUT
+          else
+            echo "lang=unknown" >> $GITHUB_OUTPUT
+          fi
+      - name: Setup Node and React
+        if: ${{ steps.lang.outputs.lang == 'node' || steps.lang.outputs.lang == 'react'}}
+        uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 #v6.2.0
+        with:
+            node-version-file: ${{ matrix.service }}/package-lock.json
+            cache: "npm"
+            cache-dependency-path: ${{ matrix.service }}/package-lock.json
+
+      - name: Run tests (Node)
+        if: steps.lang.outputs.lang == 'node' || steps.lang.outputs.lang == 'react'
+        run: |
+          cd services/${{ matrix.service }}
+          npm ci
+          npm run lint --if-present
+          npm test
+
+      - name: Setup Go
+        if: ${{ steps.lang.outputs.lang == 'go' }}
+        uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c  #v6.4.0
+        with:
+            go-version-file: ${{ matrix.service }}/go.mod  
+            cache: true
+            cache-dependency-path: ${{ matrix.service }}/go.sum
+
+      - name: Run tests (Go)
+        if: steps.lang.outputs.lang == 'go'
+        run: |
+          cd services/${{ matrix.service }}
+          go mod download
+          go test ./... -v
+
+      - name: Install Poetry
+        if: ${{ steps.lang.outputs.lang == 'python' }}
+        uses: snok/install-poetry@d526ede1e27960b7b181a5ac53044f552afdaa38 # v1.4.1
+
+      - name: Setup Python
+        if: ${{ steps.lang.outputs.lang == 'python' }}
+        uses: actions/setup-python@3d1e2d2ca0a067f27da6fec484fce7f5256def85 # v5.6.0
+        with:
+            python-version-file: ${{ matrix.service }}/.python-version
+            cache: pip
+            cache-dependency-path: ${{ matrix.service }}/requirements.txt
+      - name: Run tests (Python)
+        if: steps.lang.outputs.lang == 'python'
+        run: |
+          cd services/${{ matrix.service }}
+          pip install -r requirements.txt
+          pytest -q
+
+
+  sast-codeql:
+    name: SAST CodeQL
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed == 'true'
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript,python,go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+
+
+  dependency-scan:
+    name: Dependency Scan (Trivy FS)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
+        with:
+          scan-type: fs
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [detect-changes, unit-test, sast-codeql, secret-scan, dependency-scan]
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    outputs:
+      image_tag: ${{ env.IMAGE_TAG }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/${{ matrix.service }}
+          file: ./services/${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: false
+
+
+  image-security-scan:
+    name: Container Image Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push]
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    steps:
+      - name: Scan image
+        uses: aquasecurity/trivy-action@v0.36.0 
+        with:
+          image-ref: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+
+
+  sbom:
+    name: Generate SBOM (Syft)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push, image-security-scan]
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    steps:
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+          format: spdx-json
+          output-file: sboms/${{ matrix.service }}-${{ github.sha }}.spdx.json
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service }}
+          path: sboms/
+
+
+  sign-image:
+    name: Sign Image (Cosign)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build-and-push, sbom]
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image
+        run: |
+          cosign sign --yes docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+
+      - name: Verify signature
+        run: |
+          cosign verify docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+
+
+  provenance:
+    name: Generate Provenance (SLSA)
+    runs-on: ubuntu-latest
+    needs: [detect-changes, sign-image]
+    if: needs.detect-changes.outputs.changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: SLSA provenance
+        uses: slsa-framework/slsa-github-generator@v2
+        with:
+          artifact_path: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ github.sha }}
+
+
+  trigger-cd:
+    name: Trigger CD Repo
+    runs-on: ubuntu-latest
+    needs: [detect-changes, provenance]
+    if: needs.detect-changes.outputs.changed == 'true' && github.event_name == 'push'
+    steps:
+      - name: Trigger CD workflow via repository_dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ secrets.CD_REPO_TOKEN }}
+          repository: your-org/your-cd-repo
+          event-type: deploy
+          client-payload: |
+            {
+              "services": ${{ needs.detect-changes.outputs.services }},
+              "image_tag": "${{ github.sha }}",
+              "branch": "${{ github.ref_name }}"
+            }

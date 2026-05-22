@@ -30,43 +30,113 @@ jobs:
         with:
           list-files: shell
           filters: |
+            terraform-bootstrap:
+              - 'infra/bootstrap/**'
+            terraform-modules:
+              - 'infra/modules/**'
+            terragrunt-bootstrap:
+              - 'infra/terragrunt/boostrap/**'
+            terragrunt-modules:
+              - 'infra/terragrunt/us-east-1/**'
             services:
               - 'services/**'
 
       - name: Extract service list from changed files
         id: extract
         run: |
-            set -e
+            set -euo pipefail
 
             # files that changed under services/**
-            FILES="${{ steps.filter.outputs.services_files }}"
 
-            if [ -z "$FILES" ]; then
-            echo "changed=false " >> $GITHUB_OUTPUT
-            echo "services=[]" >> $GITHUB_OUTPUT
-            exit 0
-            fi
+            # SERVICES
+            
+            SERVICES_FILES="${{ steps.filter.outputs.services_files }}"
 
-            echo "Changed files:"
-            echo "$FILES"
+            if [ -n "$SERVICES_FILES" ]; then
+              SERVICES=$(echo "$SERVICES_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f2 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
 
-            # extract unique service names
-            SERVICES=$(echo "$FILES" \
-            | tr ' ' '\n' \
-            | cut -d'/' -f2 \
-            | sort -u \
-            | jq -R -s -c 'split("\n") | map(select(length>0))')
-
-            if [ "$SERVICES" = "[]" ]; then
-            echo "changed=false" >> $GITHUB_OUTPUT
+              echo "services_changed=true" >> $GITHUB_OUTPUT
+              echo "services=$SERVICES" >> $GITHUB_OUTPUT
             else
-            echo "changed=true" >> $GITHUB_OUTPUT
+              echo "services_changed=false" >> $GITHUB_OUTPUT
+              echo "services=[]" >> $GITHUB_OUTPUT
             fi
 
-            echo "services=$SERVICES" >> $GITHUB_OUTPUT
-            echo "Detected services: $SERVICES"
+            # TERRAFORM BOOTSTRAP
 
-        
+            TERRAFORM_BOOTSTRAP="${{ steps.filter.outputs.terraform-bootstrap_files }}"
+
+            if [ -n "$TERRAFORM_BOOTSTRAP" ]; then
+              BOOT=$(echo "$TERRAFORM_BOOTSTRAP" \
+                | tr ' ' '\n' \
+                | cut -d '/' -f2 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0)'')
+
+              echo "terraform_bootstrap_changed=true" >> $GITHUB_OUTPUT
+              echo "terraform_bootstrap=$BOOT" >> $GITHUB_OUTPUT
+            else
+              echo "terraform_bootstrap_changed=true" >> $GITHUB_OUTPUT
+              echo "terraform_bootstrap=$BOOT" >> $GITHUB_OUTPUT
+            fi
+
+             #TERRAFORM MODULES
+
+            TF_MODULES_FILES="${{ steps.filter.outputs.terraform-modules_files }}"
+            if [ -n "$TF_MODULES_FILES" ]; then
+              TF_MODULES=$(echo "$TF_MODULES_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f3 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terraform_modules_changed=true" >> $GITHUB_OUTPUT
+              echo "terraform_modules=$TF_MODULES" >> $GITHUB_OUTPUT
+            else
+              echo "terraform_modules_changed=false" >> $GITHUB_OUTPUT
+              echo "terraform_modules=[]" >> $GITHUB_OUTPUT
+            fi
+            
+            # TERRAGRUNT BOOTSTRAP
+
+            TG_BOOT_FILES="${{ steps.filter.outputs.terragrunt-bootstrap_files }}"
+
+            if [ -n "$TG_BOOT_FILES" ]; then
+              TG_BOOT=$(echo "$TG_BOOT_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f3 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terragrunt_bootstrap_changed=true" >> $GITHUB_OUTPUT
+              echo "terragrunt_bootstrap=$TG_BOOT" >> $GITHUB_OUTPUT
+            else
+              echo "terragrunt_bootstrap_changed=false" >> $GITHUB_OUTPUT
+              echo "terragrunt_bootstrap=[]" >> $GITHUB_OUTPUT
+            fi
+
+            
+            # TERRAGRUNT MODULES
+           
+            TG_FILES="${{ steps.filter.outputs.terragrunt-modules_files }}"
+
+            if [ -n "$TG_FILES" ]; then
+              TG=$(echo "$TG_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f5 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terragrunt_modules_changed=true" >> $GITHUB_OUTPUT
+              echo "terragrunt_modules=$TG" >> $GITHUB_OUTPUT
+            else
+              echo "terragrunt_modules_changed=false" >> $GITHUB_OUTPUT
+              echo "terragrunt_modules=[]" >> $GITHUB_OUTPUT
+            fi
 
 
   unit-test:

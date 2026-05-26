@@ -1,0 +1,52 @@
+name: My Composite Action
+description: Update image multi environment
+
+inputs:
+  IMAGE_TAG:
+    description: "image_tag"
+    required: true
+
+  STARTING_PATH:
+    description: "STARTING PATH"
+    required: false
+    default: ${{ github.workspace }}
+
+  IDENTIFIER_COMMENT:
+    description: "IDENTIFIER COMMENT"
+    required: true
+
+runs:
+  using: "composite"
+  steps:
+    - uses: actions/checkout@v4
+
+    - name: Update YAML files (dev)
+      shell: bash
+      run: |
+        set -euo pipefail
+
+        IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
+        STARTING_PATH="${{ inputs.STARTING_PATH }}"
+        IDENTIFIER_COMMENT="${{ inputs.IDENTIFIER_COMMENT }}"
+
+        if [ -z "$IMAGE_TAG" ]; then
+          echo "IMAGE_TAG is required"
+          exit 1
+        fi
+
+        echo "IMAGE_TAG=$IMAGE_TAG"
+        echo "STARTING_PATH=$STARTING_PATH"
+        echo "IDENTIFIER_COMMENT=$IDENTIFIER_COMMENT"
+
+        find "$STARTING_PATH" -type f \( -name "*.yaml" -o -name "*.yml" \) \
+        -exec grep -l "$IDENTIFIER_COMMENT" {} \; | while read -r file; do
+
+          echo "Processing $file"
+
+          # kiểm tra có dòng image không chứa comment marker
+          if grep -q "$file"; then
+            echo "Updating $file"
+            sed -i "s|\(\s*image:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
+          fi
+
+        done

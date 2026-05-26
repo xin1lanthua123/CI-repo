@@ -2,7 +2,7 @@ resource "aws_internet_gateway" "igw" {
   vpc_id = aws_vpc.eks.id
 
   tags = merge(var.tags,{
-    Name = "${var.project_name}-igw"
+    Name = "${var.env}-${var.project_name}-igw"
 })
 }
 resource "aws_eip" "nat" {

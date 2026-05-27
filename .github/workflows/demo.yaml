@@ -1,4 +1,4 @@
-name: Microservices-CI
+name: demo CI
 
 on:
   pull_request:

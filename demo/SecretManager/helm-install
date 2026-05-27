@@ -1,0 +1,13 @@
+# Thêm repo và cập nhật
+helm repo add external-secrets https://charts.external-secrets.io
+helm repo update
+
+# Cài đặt ESO và sử dụng Service Account đã tạo ở Bước 2
+helm install external-secrets external-secrets/external-secrets \
+    --namespace external-secrets \
+    --create-namespace \
+    --set serviceAccount.create=false \
+    --set serviceAccount.name=external-secrets \
+    --set installCRDs=true
+# Verify
+kubectl get pods -n external-secrets

@@ -1,0 +1,85 @@
+name: GitOps-CD
+
+on:
+  repository_dispatch:
+    types: [deploy]
+
+permissions:
+  contents: write
+
+jobs:
+  detect-env:
+    name: Detect Environment
+    runs-on: ubuntu-latest
+    outputs:
+      env: ${{ steps.setenv.outputs.env }}
+      version: ${{ steps.setenv.outputs.version }}
+    steps:
+      - name: Set env from branch
+        id: setenv
+        run: |
+          BRANCH="${{ github.event.client_payload.branch }}"
+
+          if [ "$BRANCH" = "dev" ]; then
+            echo "env=dev" >> $GITHUB_OUTPUT
+          elif [ "$BRANCH" = "staging" ]; then
+            echo "env=staging" >> $GITHUB_OUTPUT
+          elif [ "$BRANCH" = "main" ]; then
+            echo "env=prod" >> $GITHUB_OUTPUT
+          else
+            echo "env=dev" >> $GITHUB_OUTPUT
+          fi
+
+          VERSION=$(date +%Y.%m.%d)-${{ github.event.client_payload.image_tag }}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+
+  update-manifests:
+    name: Update Kubernetes Manifests
+    runs-on: ubuntu-latest
+    needs: detect-env
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(github.event.client_payload.services) }}
+
+    env:
+      DEPLOY_ENV: ${{ needs.detect-env.outputs.env }}
+      IMAGE_TAG: ${{ github.event.client_payload.image_tag }}
+      VERSION: ${{ needs.detect-env.outputs.version }}
+      DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
+
+    steps:
+      - name: Checkout CD repo
+        uses: actions/checkout@v4
+
+      
+
+      - name: Update manifest image tag
+        run: |
+          set -e
+
+          FILE="k8s/${DEPLOY_ENV}/${{ matrix.service }}/deployment.yaml"
+
+          if [ ! -f "$FILE" ]; then
+            echo "Manifest not found: $FILE"
+            exit 1
+          fi
+
+          IMAGE="docker.io/${DOCKERHUB_USER}/${{ matrix.service }}:${IMAGE_TAG}"
+
+          echo "Updating $FILE to image $IMAGE"
+
+          yq -i '.spec.template.spec.containers[0].image = "'"$IMAGE"'"' "$FILE"
+          yq -i '.metadata.annotations."app.version" = "'"$VERSION"'"' "$FILE"
+          yq -i '.metadata.annotations."app.commit" = "'"$IMAGE_TAG"'"' "$FILE"
+          yq -i '.metadata.annotations."app.environment" = "'"$DEPLOY_ENV"'"' "$FILE"
+
+      - name: Commit and push
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+
+          git add k8s/
+          git commit -m "release: ${{ matrix.service }} -> $DEPLOY_ENV ($IMAGE_TAG)" || echo "No changes"
+          git push

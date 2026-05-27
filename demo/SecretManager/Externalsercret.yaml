@@ -1,0 +1,20 @@
+# externalsecret.yaml
+apiVersion: external-secrets.io/v1
+kind: ExternalSecret
+metadata:
+  name: api-secrets
+  namespace: staging
+spec:
+  refreshInterval: 5s # Check for updates every 5 seconds
+  secretStoreRef:
+    name: aws-secrets-manager
+    kind: ClusterSecretStore
+  target:
+    name: api-secrets # K8s Secret name
+    creationPolicy: Owner
+  dataFrom:
+    - extract:
+        key: datnx-api # AWS Secrets Manager secret name
+
+ #Verify
+ #kubectl get externalsecret -n staging

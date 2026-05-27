@@ -1,0 +1,83 @@
+name: Reusable Deploy Workflow
+
+on:
+  workflow_call:
+    inputs:
+      environment:
+        required: true
+        type: string
+      namespace:
+        required: true
+        type: string
+      image_tag:
+        required: true
+        type: string
+
+jobs:
+  deploy:
+    name: Deploy to ${{ inputs.environment }}
+    runs-on: ubuntu-latest
+
+    # This triggers GitHub Environment protection rules
+    environment: ${{ inputs.environment }}
+
+    concurrency:
+      # Prevent parallel deployments in the same environment (especially prod)
+      group: deploy-${{ inputs.environment }}
+      cancel-in-progress: false
+
+    steps:
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: app-build-${{ inputs.image_tag }}
+          path: dist/
+
+      - name: Login to Container Registry
+        run: |
+          echo "${{ secrets.REGISTRY_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+
+      - name: Build & Push Docker image
+        run: |
+          docker build -t ghcr.io/${{ github.repository }}/smart-campus:${{ inputs.image_tag }} .
+          docker push ghcr.io/${{ github.repository }}/smart-campus:${{ inputs.image_tag }}
+
+      - name: Configure Kubernetes access (KUBECONFIG)
+        run: |
+          mkdir -p ~/.kube
+          echo "${{ secrets.CLOUD_CREDENTIALS }}" > ~/.kube/config
+          chmod 600 ~/.kube/config
+
+      - name: Deploy to Kubernetes (kubectl apply)
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          API_KEY: ${{ secrets.API_KEY }}
+        run: |
+          kubectl config set-context --current --namespace=${{ inputs.namespace }}
+
+          # Replace image tag dynamically in manifest
+          sed -i "s|IMAGE_TAG|${{ inputs.image_tag }}|g" k8s/deployment.yaml
+
+          kubectl apply -f k8s/deployment.yaml
+          kubectl apply -f k8s/service.yaml
+
+      - name: Verify rollout
+        run: |
+          kubectl rollout status deployment/smart-campus --timeout=120s
+
+      - name: Notify Slack success
+        if: success()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data "{\"text\":\"✅ Deployment SUCCESS to *${{ inputs.environment }}* | Commit: ${{ github.sha }}\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}
+
+      - name: Notify Slack failure
+        if: failure()
+        run: |
+          curl -X POST -H "Content-type: application/json" \
+          --data "{\"text\":\"❌ Deployment FAILED to *${{ inputs.environment }}* | Commit: ${{ github.sha }}\"}" \
+          ${{ secrets.SLACK_WEBHOOK_URL }}

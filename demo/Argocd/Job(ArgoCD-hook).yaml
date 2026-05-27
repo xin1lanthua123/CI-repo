@@ -1,0 +1,39 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: db-migration-presync
+  namespace: app1-ns
+  annotations:
+    argocd.argoproj.io/hook: PreSync
+    argocd.argoproj.io/hook-delete-policy: HookSucceeded,BeforeHookCreation
+spec:
+  backoffLimit: 3
+  activeDeadlineSeconds: 300
+  ttlSecondsAfterFinished: 120
+  template:
+    spec:
+      restartPolicy: Never
+      securityContext:
+        runAsNonRoot: true
+      containers:
+      - name: migrate
+        image: your-registry/app1-backend:latest
+        imagePullPolicy: IfNotPresent
+        command:
+          - sh
+          - -c
+        args:
+          - |
+            set -e
+            echo "🚀 Starting DB migration..."
+
+            # Ví dụ migration (thay bằng tool của bạn)
+            npx prisma migrate deploy
+
+            echo "✅ Migration completed successfully"
+        env:
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: app1-db-secret
+              key: DATABASE_URL

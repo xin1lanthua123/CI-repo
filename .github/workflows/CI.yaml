@@ -1,0 +1,450 @@
+name: Microservices-CI
+
+on:
+  pull_request:
+    branches: [dev, staging, main]
+
+  push:
+    branches: [feature/**,dev,staging ] # main branch which means staging env
+
+    tags:
+        - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env
+    paths:
+      - "services"
+
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_TAG: ${{ github.sha }}
+
+jobs:
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.extract.outputs.services }}
+      services_changed: ${{ steps.extract.outputs.services_changed }}
+
+      terraform_bootstrap_changed: ${{ steps.extract.outputs.terraform_bootstrap_changed }}
+      terraform_bootstrap: ${{ steps.extract.outputs.terraform_bootstrap }}
+
+      terraform_modules_changed: ${{ steps.extract.outputs.terraform_modules_changed }}
+      terraform_modules: ${{ steps.extract.outputs.terraform_modules }}
+
+      terragrunt_bootstrap_changed: ${{ steps.extract.outputs.terragrunt_bootstrap_changed }}
+      terragrunt_bootstrap: ${{ steps.extract.outputs.terragrunt_bootstrap }}
+
+      terragrunt_modules_changed: ${{ steps.extract.outputs.terragrunt_modules_changed }}
+      terragrunt_modules: ${{ steps.extract.outputs.terragrunt_modules }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d #vv4.0.1
+        with:
+          list-files: shell
+          filters: |
+            terraform-bootstrap:
+              - 'infra/bootstrap/**'
+            terraform-modules:
+              - 'infra/modules/**'
+            terragrunt-bootstrap:
+              - 'infra/terragrunt/bootstrap/**'
+            terragrunt-modules:
+              - 'infra/terragrunt/us-east-1/**'
+            services:
+              - 'services/**'
+
+      - name: Extract service list from changed files
+        id: extract
+        run: |
+            set -euo pipefail
+
+            # files that changed under services/**
+
+            # SERVICES
+            
+            SERVICES_FILES="${{ steps.filter.outputs.services_files }}"
+
+            if [ -n "$SERVICES_FILES" ]; then
+              SERVICES=$(echo "$SERVICES_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f2 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "services_changed=true" >> $GITHUB_OUTPUT
+              echo "services=$SERVICES" >> $GITHUB_OUTPUT
+            else
+              echo "services_changed=false" >> $GITHUB_OUTPUT
+              echo "services=[]" >> $GITHUB_OUTPUT
+            fi
+
+            # TERRAFORM BOOTSTRAP
+
+            TF_BOOTSTRAP="${{ steps.filter.outputs.terraform-bootstrap_files }}"
+
+            if [ -n "$TF_BOOTSTRAP" ]; then
+              BOOT=$(echo "$TF_BOOTSTRAP" \
+                | tr ' ' '\n' \
+                | cut -d '/' -f2 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terraform_bootstrap_changed=true" >> $GITHUB_OUTPUT
+              echo "terraform_bootstrap=$BOOT" >> $GITHUB_OUTPUT
+            else
+              echo "terraform_bootstrap_changed=false" >> $GITHUB_OUTPUT
+              echo "terraform_bootstrap=[]" >> $GITHUB_OUTPUT
+            fi
+
+             #TERRAFORM MODULES
+
+            TF_MODULES_FILES="${{ steps.filter.outputs.terraform-modules_files }}"
+            if [ -n "$TF_MODULES_FILES" ]; then
+              TF_MODULES=$(echo "$TF_MODULES_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f3 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terraform_modules_changed=true" >> $GITHUB_OUTPUT
+              echo "terraform_modules=$TF_MODULES" >> $GITHUB_OUTPUT
+            else
+              echo "terraform_modules_changed=false" >> $GITHUB_OUTPUT
+              echo "terraform_modules=[]" >> $GITHUB_OUTPUT
+            fi
+            
+            # TERRAGRUNT BOOTSTRAP
+
+            TG_BOOT_FILES="${{ steps.filter.outputs.terragrunt-bootstrap_files }}"
+
+            if [ -n "$TG_BOOT_FILES" ]; then
+              TG_BOOT=$(echo "$TG_BOOT_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f3 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terragrunt_bootstrap_changed=true" >> $GITHUB_OUTPUT
+              echo "terragrunt_bootstrap=$TG_BOOT" >> $GITHUB_OUTPUT
+            else
+              echo "terragrunt_bootstrap_changed=false" >> $GITHUB_OUTPUT
+              echo "terragrunt_bootstrap=[]" >> $GITHUB_OUTPUT
+            fi
+
+            
+            # TERRAGRUNT MODULES
+           
+            TG_FILES="${{ steps.filter.outputs.terragrunt-modules_files }}"
+
+            if [ -n "$TG_FILES" ]; then
+              TG=$(echo "$TG_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f5 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))')
+
+              echo "terragrunt_modules_changed=true" >> $GITHUB_OUTPUT
+              echo "terragrunt_modules=$TG" >> $GITHUB_OUTPUT
+            else
+              echo "terragrunt_modules_changed=false" >> $GITHUB_OUTPUT
+              echo "terragrunt_modules=[]" >> $GITHUB_OUTPUT
+            fi
+
+
+  unit-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    uses: ./.github/workflows/languages.yaml
+    with:
+      services: ${{ matrix.service }}
+
+
+  sast-codeql:
+    name: SAST CodeQL
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    permissions:
+      security-events: write
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: javascript,python,go
+
+      - name: Autobuild
+        uses: github/codeql-action/autobuild@v3
+
+      - name: Analyze
+        uses: github/codeql-action/analyze@v3
+
+
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  iac-scan:
+    name: " IaC Security Scan"
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Checkov on Terraform
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: infra/
+          framework: terraform
+          soft_fail: false
+          skip_check: CKV_AWS_39,CKV_AWS_58  # Public EKS endpoint (intentional for dev)
+          output_format: cli
+
+      - name: Run Checkov on Kubernetes manifests
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          directory: k8s/
+          framework: kubernetes
+          soft_fail: true  # Soft fail for K8s (some checks may not apply)
+          output_format: cli
+
+
+  dependency-scan:
+    name: Dependency Scan (Trivy FS)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 #v0.36.0
+        
+        with:
+          scan-type: fs
+          scan-ref: services/${{ matrix.service }}
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 1
+
+  dockerfile-lint:
+    name: " Dockerfile Lint"
+    runs-on: ubuntu-latest
+    needs: [detect-changes,build-and-push]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/${{ matrix.service }}/**/Dockerfile
+          failure-threshold: warning
+
+
+  generate-image-tag:
+    name: Generate image tag
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Generate tag from git
+        id: image_tag
+        run: |
+          IMAGE_TAG=$(git describe --tags --first-parent --match "[0-9]*.[0-9]*.[0-9]*")
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  build-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [generate-image-tag,detect-changes, unit-test, sast-codeql, secret-scan]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    env:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login DockerHub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: docker.io/${{ github.repository }}/jerney-${{ matrix.service }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/${{ matrix.service }}
+          file: ./services/${{ matrix.service }}/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: |
+            ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          provenance: true
+          sbom: true
+
+  image-security-scan:
+    name: Container Image Scan (Trivy)
+    runs-on: ubuntu-latest
+    needs: [generate-image-tag,detect-changes, build-and-push]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    env:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+
+    steps:
+      - name: Scan image
+        uses: aquasecurity/trivy-action@v0.36.0 
+        with:
+          image-ref: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          vuln-type: "os,library"
+          ignore-unfixed: true
+          timeout: "10m"
+
+  sign-image:
+    name: Sign Image (Cosign)
+    runs-on: ubuntu-latest
+    needs: [generate-image-tag,detect-changes, build-and-push]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    env:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image
+        run: |
+          cosign login docker.io
+          cosign sign --yes docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+
+      - name: Verify signature
+        run: |
+          cosign verify docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+
+  update-development-image-tag:
+    name: Update development image tag
+    needs:
+      - generate-image-tag
+      - detect-changes
+
+    if: needs.detect-changes.outputs.services_changed == 'true'
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    uses: ./.github/workflows/update-images.yaml
+
+    with:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+      IDENTIFIER_COMMENT: "# DEV_IMAGE_TAG"
+      STARTING_PATH: ${{ github.workspace }}
+      SERVICES: ${{ matrix.service }}
+
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      
+
+  update-production-image-tag:
+    name: Update production image tag
+
+    needs:
+      - generate-image-tag
+      - detect-changes
+      - update-development-image-tag
+
+    if: |
+      needs.detect-changes.outputs.services_changed == 'true' &&
+      startsWith(github.ref, 'refs/tags/')
+
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    uses: ./.github/workflows/update-images.yaml
+
+    with:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+      IDENTIFIER_COMMENT: "# PROD_IMAGE_TAG"
+      STARTING_PATH: ${{ github.workspace }}
+      SERVICES: ${{ matrix.service }}
+
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.GITHUB_TOKEN }}

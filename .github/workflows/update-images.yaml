@@ -80,8 +80,8 @@ jobs:
 
           cd gitops
 
-          git config user.name "github-actions"
-          git config user.email "github-actions@github.com"
+          git config user.name "quanldl"
+          git config user.email "ldlq2005@gmail.com"
 
           BRANCH="ci/feature/${{ inputs.SERVICES }}-${{ inputs.IMAGE_TAG }}"
 

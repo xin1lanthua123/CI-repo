@@ -25,21 +25,6 @@ jobs:
           repository: xin1lanthua123/CD-repo
           token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
-          
-    #   - name: Print workflow info
-    #     run: |
-    #       set -euo pipefail
-
-    #       cd gitops
-
-    #       git config user.name "quanldl"
-    #       git config user.email "ldlq2005@gmail.com"
-
-    #       branch="ci/feature/payment"
-    #       git checkout -b "$branch" || git checkout "$branch"
-    #       git add .
-    #       git commit -m "chore: update $branch branch" || echo "No changes to commit"
-    #       git push origin $branch
             
       - name: Modify GitOps repo (TEST)
         run: |
@@ -50,6 +35,7 @@ jobs:
         with:
           token: ${{ secrets.GITOPS_TOKEN }}
           path: gitops
+          delete-branch: true
           branch: ci/feature/payment
           base: main
           body: |
@@ -57,6 +43,7 @@ jobs:
 
             Service: payment
             Image: Image Tag
+
 
       - name: Echo success
         run: |

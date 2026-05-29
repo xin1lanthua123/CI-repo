@@ -13,10 +13,10 @@ on:
             - bootstrap
             - destroy-ENV
   # pull_request:
-  #   branches: [dev, staging, main]
+  #   branches: [dev, main]
 
   # # push:
-  # #   branches: [feature/**,dev,staging ] # main branch which means staging env
+  # #   branches: [feature/**,dev,main] # main branch which means staging env
 
   # #   tags:
   # #       - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env
@@ -100,6 +100,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-changes
     if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        languages: 
+          - javascript
+          - python
+          - go 
     permissions:
       security-events: write
       contents: read
@@ -109,7 +116,7 @@ jobs:
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages: javascript,python,go
+          languages: ${{ matrix.languages}}
 
       - name: Autobuild
         uses: github/codeql-action/autobuild@v3
@@ -151,7 +158,7 @@ jobs:
           ignore-unfixed: true
           exit-code: 1
 
-  dockerfile- :
+  dockerfile-lint :
     name: " Dockerfile Lint"
     runs-on: ubuntu-latest
     needs: [detect-changes,build-and-push]
@@ -302,7 +309,7 @@ jobs:
       - generate-image-tag
       - detect-changes
 
-    if: needs.detect-changes.outputs.services_changed == 'true'
+    if: needs.detect-changes.outputs.services_changed == 'true' && github.ref == 'refs/head/dev'
 
     strategy:
       fail-fast: false

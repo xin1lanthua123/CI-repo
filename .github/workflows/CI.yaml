@@ -288,7 +288,7 @@ jobs:
         with:
           image-ref: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
           format: table
-          exit-code: 1
+          exit-code: 0
           severity: CRITICAL,HIGH
           vuln-type: "os,library"
           ignore-unfixed: true

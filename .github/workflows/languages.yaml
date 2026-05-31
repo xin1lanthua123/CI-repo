@@ -94,7 +94,7 @@ jobs:
           - name: Run lint (verifyGoogleJavaFormat)
             working-directory: services/${{ inputs.services }}
             run: |
-                ./gradlew verifyGoogleJavaFormat
+                ./gradlew verifyGoogleJavaFormat --no-daemon
 
           - name: Run tests 
             working-directory: services/${{ inputs.services }}

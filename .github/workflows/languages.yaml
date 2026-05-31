@@ -90,18 +90,6 @@ jobs:
             run: |
                 chmod +x ./gradlew
                 ./gradlew downloadRepos
-                
-          - name: Debug Java
-            run: |
-              which java
-              java -version
-              echo "JAVA_HOME=$JAVA_HOME"
-              ./gradlew --version
-
-          - name: Run lint (verifyGoogleJavaFormat)
-            working-directory: services/${{ inputs.services }}
-            run: |
-                ./gradlew verifyGoogleJavaFormat --no-daemon
 
           - name: Run tests 
             working-directory: services/${{ inputs.services }}

@@ -68,11 +68,13 @@ jobs:
 
               # Pattern 1:
               # image: nginx:1.0.0 # DEV_IMAGE_TAG (used for Kubernetes manifest)
-              sed -i "s|\(\s*image:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
+              if [ -d "kubernetes-manifest" ]; then
+                  sed -i "s|\(\s*image:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
+              fi
               
               # Pattern 2:
               # tag: nginx:1.0.0 # DEV_IMAGE_TAG (used for HELM manifest )
-              sed -i "s|\(\s*tag:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
+                sed -i "s|\(\s*tag:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
 
               echo "$file updated"
           done

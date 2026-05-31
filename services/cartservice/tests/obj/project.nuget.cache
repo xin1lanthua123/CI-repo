@@ -1,7 +1,7 @@
 {
   "version": 2,
-  "dgSpecHash": "CX8sdlTv5qc=",
-  "success": false,
+  "dgSpecHash": "8lzAMf2ckSQ=",
+  "success": true,
   "projectFilePath": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Laptop\\.nuget\\packages\\google.api.commonprotos\\2.17.0\\google.api.commonprotos.2.17.0.nupkg.sha512",
@@ -30,7 +30,7 @@
     "C:\\Users\\Laptop\\.nuget\\packages\\grpc.net.clientfactory\\2.76.0\\grpc.net.clientfactory.2.76.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\grpc.net.common\\2.76.0\\grpc.net.common.2.76.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\grpc.tools\\2.76.0\\grpc.tools.2.76.0.nupkg.sha512",
-    "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.aspnetcore.testhost\\10.0.2\\microsoft.aspnetcore.testhost.10.0.2.nupkg.sha512",
+    "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.aspnetcore.testhost\\8.0.4\\microsoft.aspnetcore.testhost.8.0.4.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.bcl.asyncinterfaces\\6.0.0\\microsoft.bcl.asyncinterfaces.6.0.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.codecoverage\\18.0.1\\microsoft.codecoverage.18.0.1.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.extensions.caching.abstractions\\8.0.0\\microsoft.extensions.caching.abstractions.8.0.0.nupkg.sha512",
@@ -58,7 +58,7 @@
     "C:\\Users\\Laptop\\.nuget\\packages\\system.codedom\\7.0.0\\system.codedom.7.0.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\system.collections.immutable\\8.0.0\\system.collections.immutable.8.0.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\system.diagnostics.diagnosticsource\\8.0.0\\system.diagnostics.diagnosticsource.8.0.0.nupkg.sha512",
-    "C:\\Users\\Laptop\\.nuget\\packages\\system.io.pipelines\\5.0.1\\system.io.pipelines.5.0.1.nupkg.sha512",
+    "C:\\Users\\Laptop\\.nuget\\packages\\system.io.pipelines\\8.0.0\\system.io.pipelines.8.0.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\system.management\\7.0.2\\system.management.7.0.2.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\system.reflection.metadata\\8.0.0\\system.reflection.metadata.8.0.0.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\xunit\\2.9.3\\xunit.2.9.3.nupkg.sha512",
@@ -73,17 +73,5 @@
     "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.windowsdesktop.app.ref\\8.0.22\\microsoft.windowsdesktop.app.ref.8.0.22.nupkg.sha512",
     "C:\\Users\\Laptop\\.nuget\\packages\\microsoft.aspnetcore.app.ref\\8.0.22\\microsoft.aspnetcore.app.ref.8.0.22.nupkg.sha512"
   ],
-  "logs": [
-    {
-      "code": "NU1202",
-      "level": "Error",
-      "message": "Package Microsoft.AspNetCore.TestHost 10.0.2 is not compatible with net8.0 (.NETCoreApp,Version=v8.0). Package Microsoft.AspNetCore.TestHost 10.0.2 supports: net10.0 (.NETCoreApp,Version=v10.0)",
-      "projectPath": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
-      "filePath": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
-      "libraryId": "Microsoft.AspNetCore.TestHost",
-      "targetGraphs": [
-        "net8.0"
-      ]
-    }
-  ]
+  "logs": []
 }

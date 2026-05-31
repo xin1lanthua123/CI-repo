@@ -1,0 +1,63 @@
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM --platform=$BUILDPLATFORM python:3.14.2-alpine@sha256:7af51ebeb83610fb69d633d5c61a2efb87efa4caf66b59862d624bb6ef788345 AS base
+
+FROM base AS builder
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_DISABLE_PIP_VERSION_CHECK=1 \
+    PIP_NO_CACHE_DIR=1
+
+RUN apk update \
+    && apk add --no-cache g++ linux-headers \
+    && rm -rf /var/cache/apk/*
+
+# get packages
+COPY requirements.txt .
+
+RUN python -m venv /venv \
+    && /venv/bin/pip install -r requirements.txt
+
+
+FROM base
+
+ENV PYTHONDONTWRITEBYTECODE=1
+ENV PYTHONUNBUFFERED=1
+ENV PATH="/venv/bin:$PATH"
+
+RUN apk update \
+    && apk add --no-cache libstdc++ \
+    && rm -rf /var/cache/apk/*
+
+RUN addgroup -g 1000 -S appgroup \
+ && adduser -u 1000 -S -G appgroup appuser
+
+# get packages
+WORKDIR /recommendationservice
+
+# Grab packages from builder
+COPY --link --from=builder  /venv /venv
+
+# Add the application
+COPY . .
+
+USER appuser
+
+# set listen port
+ENV PORT="8080"
+EXPOSE 8080
+
+ENTRYPOINT ["python", "recommendation_server.py"]   

@@ -9,9 +9,7 @@ on:
             default: "apply"
             type: choice
             options:
-            - apply-ENV
-            - bootstrap
-            - destroy-ENV
+            - apply
   # pull_request:
   #   branches: [dev, main]
 
@@ -339,7 +337,7 @@ jobs:
 
     with:
       IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
-      IDENTIFIER_COMMENT: "# DEV_IMAGE_TAG"
+      IDENTIFIER_COMMENT: "#DEV_IMAGE_TAG"
       STARTING_PATH: ${{ github.workspace }}
       SERVICES: ${{ matrix.service }}
       ENV: dev

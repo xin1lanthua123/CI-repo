@@ -330,7 +330,6 @@ jobs:
       - generate-image-tag
       - detect-changes
       - image-security-scan
-      - sign-image
 
     if: needs.detect-changes.outputs.services_changed == 'true' && github.ref == 'refs/heads/dev'
 

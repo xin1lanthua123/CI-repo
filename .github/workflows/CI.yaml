@@ -343,7 +343,7 @@ jobs:
     with:
       IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
       IDENTIFIER_COMMENT: "#DEV_IMAGE_TAG"
-      STARTING_PATH: ${{ github.workspace }}
+      STARTING_PATH: .
       SERVICES: ${{ matrix.service }}
       ENV: dev
 

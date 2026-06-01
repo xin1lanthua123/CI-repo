@@ -105,8 +105,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh pr merge \
+            "ci/feature/${{ inputs.SERVICES }}-${{ inputs.ENV }}-${{ inputs.IMAGE_TAG }}" \
             --repo xin1lanthua123/CD-repo \
-            --head "ci/feature/${{ inputs.SERVICES }}-${{ inputs.ENV }}-${{ inputs.IMAGE_TAG }}" \
             --auto --squash
       
           

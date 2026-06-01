@@ -155,10 +155,15 @@ jobs:
                 ruff check . || true
                 ruff format . --check || true
                 
-          - name: Run tests (Python)
+          - name: Download Dependencies (Python)
             working-directory: services/${{ inputs.services }}
             run: |        
                 pip install -r requirements.txt
+
+          - name: Run test (Python)
+            working-directory: services/${{ inputs.services }}
+            run: |        
+                pip install pytest
                 pytest -q
 
     Setup-Dotnet:

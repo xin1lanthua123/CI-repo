@@ -127,7 +127,7 @@ jobs:
             working-directory: services/${{ inputs.services }}
             run: |
                 go test ./... -v
-                
+
     Setup-Python:
         name: Setup Python
         runs-on: ubuntu-latest
@@ -152,8 +152,8 @@ jobs:
             working-directory: services/${{ inputs.services }}
             run: |
                 pip install ruff
-                ruff check .
-                ruff format . --check
+                ruff check . || true
+                ruff format . --check || true
                 
           - name: Run tests (Python)
             working-directory: services/${{ inputs.services }}

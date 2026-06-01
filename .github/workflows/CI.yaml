@@ -192,7 +192,8 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: services/${{ matrix.service }}/Dockerfile
-          failure-threshold: error
+          failure-threshold: error  
+          # failure-threshold: warning  # or using "warning" to upgrade the dockerfile to its best quality"
 
 
   generate-image-tag:
@@ -329,6 +330,7 @@ jobs:
       - generate-image-tag
       - detect-changes
       - image-security-scan
+      - sign-image
 
     if: needs.detect-changes.outputs.services_changed == 'true' && github.ref == 'refs/heads/dev'
 
@@ -358,6 +360,7 @@ jobs:
       - generate-image-tag
       - detect-changes
       - image-security-scan
+      - sign-image
 
     if: |
       needs.detect-changes.outputs.services_changed == 'true' &&

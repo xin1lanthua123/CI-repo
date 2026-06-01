@@ -110,6 +110,15 @@ jobs:
                 go-version-file: services/${{ inputs.services }}/go.mod
                 cache: true
                 cache-dependency-path: services/${{ inputs.services }}/go.sum
+                
+          - name: Debug Go module
+            working-directory: services/${{ inputs.services }}
+            run: |
+                pwd
+                go version
+                ls -la
+                find . -name "*.go" | head -20
+                go list ./...
 
           - name: Run golangci-lint
             uses: golangci/golangci-lint-action@v8
@@ -118,6 +127,7 @@ jobs:
                 working-directory: services/${{ inputs.services }}
             env:
                 GOTOOLCHAIN: local
+            
           - name: Run tests (Go)
             working-directory: services/${{ inputs.services }}
             run: |

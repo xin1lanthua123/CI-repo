@@ -18,16 +18,16 @@ FROM --platform=$BUILDPLATFORM mcr.microsoft.com/dotnet/sdk:10.0.100-noble@sha25
 ARG TARGETARCH
 WORKDIR /app
 
-COPY src/cartservice.csproj /src
+COPY src/cartservice.csproj .
 
 RUN --mount=type=cache,target=/root/.dotnet \
-     dotnet restore src/cartservice.csproj \
+     dotnet restore cartservice.csproj \
     -a $TARGETARCH
 
-COPY src src
+COPY src .
 
 RUN --mount=type=cache,target=/root/.dotnet \
-    dotnet publish src/cartservice.csproj \
+    dotnet publish cartservice.csproj \
     -p:PublishSingleFile=true \
     -a $TARGETARCH \
     --self-contained true \

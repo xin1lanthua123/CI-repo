@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj": {}
+    "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj": {}
   },
   "projects": {
-    "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
+    "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
+        "projectUniqueName": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
         "projectName": "cartservice",
-        "projectPath": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
+        "projectPath": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
         "packagesPath": "C:\\Users\\Laptop\\.nuget\\packages\\",
-        "outputPath": "e:\\CI-repo\\services\\cartservice\\src\\obj\\",
+        "outputPath": "E:\\CI-repo\\services\\cartservice\\src\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Laptop\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -110,14 +110,14 @@
         }
       }
     },
-    "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj": {
+    "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
+        "projectUniqueName": "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
         "projectName": "cartservice.tests",
-        "projectPath": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
+        "projectPath": "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
         "packagesPath": "C:\\Users\\Laptop\\.nuget\\packages\\",
-        "outputPath": "e:\\CI-repo\\services\\cartservice\\tests\\obj\\",
+        "outputPath": "E:\\CI-repo\\services\\cartservice\\tests\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Laptop\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -132,8 +132,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
-                "projectPath": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj"
+              "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
+                "projectPath": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj"
               }
             }
           }

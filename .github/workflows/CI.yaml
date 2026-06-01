@@ -192,7 +192,7 @@ jobs:
         uses: hadolint/hadolint-action@v3.1.0
         with:
           dockerfile: services/${{ matrix.service }}/Dockerfile
-          failure-threshold: warning
+          failure-threshold: error
 
 
   generate-image-tag:
@@ -220,7 +220,7 @@ jobs:
   build-and-push:
     name: Build & Push Docker Images
     runs-on: ubuntu-latest
-    needs: [generate-image-tag,detect-changes, unit-test,secret-scan]
+    needs: [generate-image-tag,detect-changes, unit-test,secret-scan,dependency-scan,dockerfile-lint]
     if: needs.detect-changes.outputs.services_changed == 'true'
     strategy:
       fail-fast: false
@@ -328,6 +328,7 @@ jobs:
     needs:
       - generate-image-tag
       - detect-changes
+      - image-security-scan
 
     if: needs.detect-changes.outputs.services_changed == 'true' && github.ref == 'refs/heads/dev'
 
@@ -356,7 +357,7 @@ jobs:
     needs:
       - generate-image-tag
       - detect-changes
-      - update-development-image-tag
+      - image-security-scan
 
     if: |
       needs.detect-changes.outputs.services_changed == 'true' &&

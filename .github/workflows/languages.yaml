@@ -111,9 +111,9 @@ jobs:
                 cache: true
                 cache-dependency-path: services/${{ inputs.services }}/go.sum
           - name: Run golangci-lint
-            uses: golangci/golangci-lint-action@v6
+            uses: golangci/golangci-lint-action@v8
             with:
-                version: latest
+                version: v2.1.0
                 working-directory: services/${{ inputs.services }}
           - name: Run tests (Go)
             working-directory: services/${{ inputs.services }}

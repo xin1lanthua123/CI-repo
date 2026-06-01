@@ -101,6 +101,8 @@ jobs:
       - name: Auto merge for DEV environment
         shell: bash
         if: inputs.ENV == 'dev'
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           gh pr merge --auto --squash 
       

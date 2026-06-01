@@ -102,7 +102,7 @@ jobs:
         shell: bash
         if: inputs.ENV == 'dev'
         env:
-          GH_TOKEN: ${{ github.token }}
+          GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |
           gh pr merge \
             "ci/feature/${{ inputs.SERVICES }}-${{ inputs.ENV }}-${{ inputs.IMAGE_TAG }}" \

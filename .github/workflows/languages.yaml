@@ -117,12 +117,17 @@ jobs:
                 version: v2.1.0
                 working-directory: services/${{ inputs.services }}
                 args: --issues-exit-code=0
+
+          - name: Run download (Go)
+            working-directory: services/${{ inputs.services }}
+            run: |
+                go mod download
             
           - name: Run tests (Go)
             working-directory: services/${{ inputs.services }}
             run: |
-                go mod download
                 go test ./... -v
+                
     Setup-Python:
         name: Setup Python
         runs-on: ubuntu-latest

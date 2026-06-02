@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          IMAGE_TAG="${{inputs.SERVICES}}:${{ inputs.IMAGE_TAG }}"
+          IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
           STARTING_PATH="${{ inputs.STARTING_PATH }}"
           IDENTIFIER_COMMENT="${{ inputs.IDENTIFIER_COMMENT }}"
 
@@ -66,8 +66,7 @@ jobs:
               echo "Processing $file"
 
               # Pattern 1:
-              # image: nginx:1.0.0 # DEV_IMAGE_TAG (used for Kubernetes manifest)
-                  sed -i "s|\(\s*image:\s*\).*${IDENTIFIER_COMMENT}|\1${IMAGE_TAG} ${IDENTIFIER_COMMENT}|g" "$file"
+                sed -i "s|\(\s*.*:\s*\).* \({{ .IDENTIFIER_COMMENT }}\)|\1{{ .NEW_TAG }} \2|" "$file";
              
               
               # Pattern 2:

@@ -121,7 +121,7 @@ jobs:
 
       - name: Auto merge for DEV environment
         shell: bash
-        if: inputs.ENV == 'dev'
+        if: inputs.ENV == 'dev' || inputs.ENV == 'prod'
         env:
           GH_TOKEN: ${{ secrets.GITOPS_TOKEN }}
         run: |

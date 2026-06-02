@@ -335,6 +335,7 @@ jobs:
       - image-security-scan
 
     if: needs.detect-changes.outputs.services_changed == 'true' && github.ref == 'refs/heads/dev'
+    
 
     strategy:
       fail-fast: false
@@ -342,10 +343,9 @@ jobs:
         service: ${{ fromJson(needs.detect-changes.outputs.services) }}
 
     uses: ./.github/workflows/update-images.yaml
-
     with:
       IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
-      IDENTIFIER_COMMENT: "#DEV_IMAGE_TAG"
+      IDENTIFIER_COMMENT: "DEV_IMAGE_TAG ${{matrix.service}}"
       STARTING_PATH: .
       SERVICES: ${{ matrix.service }}
       ENV: dev
@@ -377,7 +377,7 @@ jobs:
 
     with:
       IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
-      IDENTIFIER_COMMENT: "# PROD_IMAGE_TAG"
+      IDENTIFIER_COMMENT: "PROD_IMAGE_TAG"
       STARTING_PATH: ${{ github.workspace }}
       SERVICES: ${{ matrix.service }}
       ENV: prod

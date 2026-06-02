@@ -54,40 +54,47 @@ jobs:
 
           IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
           STARTING_PATH="${{ inputs.STARTING_PATH }}"
-          IDENTIFIER_COMMENT="${{ inputs.IDENTIFIER_COMMENT }}"
+
           SERVICES="${{ inputs.SERVICES }}"
+          SERVICE_MARKER="$(echo "$SERVICES" | tr '[:lower:]' '[:upper:]')"
+
+          IMAGE_MARKER="${{ inputs.IDENTIFIER_COMMENT }}"
+
+          
 
           echo "IMAGE_TAG=$IMAGE_TAG"
           echo "STARTING_PATH=$STARTING_PATH"
-          echo "IDENTIFIER_COMMENT=$IDENTIFIER_COMMENT"
-          echo "SERVICES=$SERVICES"
+          echo "SERVICE_MARKER=$SERVICE_MARKER"
+          echo "IMAGE_MARKER=$IMAGE_MARKER"
 
-          SERVICE_MARKER="#$(echo "$SERVICES" | tr '[:lower:]' '[:upper:]')"
 
           find "$STARTING_PATH" -type f \( -name "*.yaml" -o -name "*.yml" \) \
-            -exec grep -l "$IDENTIFIER_COMMENT" {} \; | while read -r file; do
+            -exec grep -l "$IMAGE_MARKER" {} \; | while read -r file; do
 
               echo "Processing $file"
-
-              if ! grep -q "$SERVICE_MARKER" "$file"; then
-                echo "Skipping (service marker not found): $file"
-                continue
+              if ! grep -q "$IMAGE_MARKER" "$file" ;then
+                  echo "Skipping (no image marker)"
+                  continue
               fi
 
+              if ! grep -q "$SERVICE_MARKER" "$file" ;then
+                  echo "Skipping (no service marker)"
+                  continue
+              fi
               echo "Updating service file: $file"
 
               # Pattern 1:
               # image: nginx:1.0.0 # DEV_IMAGE_TAG (used for Kubernetes manifest)
                   sed -E -i \
-                  "s|(image:\s*[^:]+:)[^[:space:]]+(\s*${IDENTIFIER_COMMENT}.*)|\1${IMAGE_TAG}\2|g" \
+                  "s|(image:\s*[^:]+:)[^[:space:]]+|\1${IMAGE_TAG}|g" \
                   "$file"
                               
               
               # Pattern 2:
               # tag: nginx:1.0.0 # DEV_IMAGE_TAG (used for HELM manifest )
-                 sed -E -i \
-                "s|(tag:\s*)[^[:space:]]+(\s*${IDENTIFIER_COMMENT}.*)|\1${IMAGE_TAG}\2|g" \
-                "$file"
+                  sed -E -i \
+                  "s|(tag:\s*)[^[:space:]]+|\1${IMAGE_TAG}|g" \
+                  "$file"
 
               echo "$file updated"
           done

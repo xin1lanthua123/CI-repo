@@ -52,7 +52,7 @@ jobs:
         run: |
           set -euo pipefail
 
-          IMAGE_TAG="${{ inputs.IMAGE_TAG }}"
+          IMAGE_TAG="${{inputs.SERVICES}}:${{ inputs.IMAGE_TAG }}"
           STARTING_PATH="${{ inputs.STARTING_PATH }}"
           IDENTIFIER_COMMENT="${{ inputs.IDENTIFIER_COMMENT }}"
 

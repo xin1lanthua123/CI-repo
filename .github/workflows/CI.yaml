@@ -112,35 +112,6 @@ jobs:
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
 
-  # sast-codeql:
-  #   name: SAST CodeQL
-  #   runs-on: ubuntu-latest
-  #   needs: detect-changes
-  #   if: needs.detect-changes.outputs.services_changed == 'true'
-  #   strategy:
-  #     fail-fast: false
-  #     matrix:
-  #       languages: 
-  #         - javascript
-  #         - python
-  #         - go 
-  #   permissions:
-  #     security-events: write
-  #     contents: read
-  #   steps:
-  #     - uses: actions/checkout@v4
-
-  #     - name: Initialize CodeQL
-  #       uses: github/codeql-action/init@v3
-  #       with:
-  #         languages: ${{ matrix.languages}}
-
-  #     - name: Autobuild
-  #       uses: github/codeql-action/autobuild@v3
-
-  #     - name: Analyze
-  #       uses: github/codeql-action/analyze@v3
-
 
   secret-scan:
     name: Secret Scan (Gitleaks)

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {}
+    "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {}
   },
   "projects": {
-    "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
+    "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
+        "projectUniqueName": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
         "projectName": "cartservice",
-        "projectPath": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
+        "projectPath": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj",
         "packagesPath": "C:\\Users\\Laptop\\.nuget\\packages\\",
-        "outputPath": "E:\\CI-repo\\services\\cartservice\\src\\obj\\",
+        "outputPath": "e:\\CI-repo\\services\\cartservice\\src\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\Laptop\\AppData\\Roaming\\NuGet\\NuGet.Config"

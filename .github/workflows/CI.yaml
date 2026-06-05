@@ -20,6 +20,7 @@ on:
   # #       - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env
   # #   paths:
   # #     - "services/*"
+  # #     - ".github/workflow/*"
 
 env:
   REGISTRY: docker.io
@@ -61,24 +62,22 @@ jobs:
           SERVICES_FILES="${{ steps.filter.outputs.services_files }}"
           GITHUB_FILES="${{ steps.filter.outputs.github_files }}"
 
-          get_all_services() {
-            find services -mindepth 1 -maxdepth 1 -type d -printf "%f\n" \
-              | jq -R -s -c 'split("\n") | map(select(length>0))'
-          }
-
-          get_modified_services() {
+          if [ -n "$GITHUB_FILES" ]; then
+            get_modified_services() {
             echo "$SERVICES_FILES" \
               | tr ' ' '\n' \
               | cut -d'/' -f2 \
               | sort -u \
               | jq -R -s -c 'split("\n") | map(select(length>0))'
           }
-
-          if [ -n "$GITHUB_FILES" ]; then
             SERVICES=$(get_all_services)
             MODE="all"
 
           elif [ -n "$SERVICES_FILES" ]; then
+            get_all_services() {
+            find services -mindepth 1 -maxdepth 1 -type d -printf "%f\n" \
+              | jq -R -s -c 'split("\n") | map(select(length>0))'
+          }
             SERVICES=$(get_modified_services)
             MODE="partial"
 
@@ -87,60 +86,18 @@ jobs:
             MODE="none"
           fi
 
-          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
-          echo "mode=$MODE" 
-
           if [ "$SERVICES" != "[]" ]; then
             echo "services_changed=true" >> "$GITHUB_OUTPUT"
           else
             echo "services_changed=false" >> "$GITHUB_OUTPUT"
           fi
 
-      # - name: Extract service list from changed files
-      #   id: extract
-      #   run: |
-      #       set -euo pipefail
-
-      #       # files that changed under services/**
-
-      #       # SERVICES
-            
-      #       SERVICES_FILES="${{ steps.filter.outputs.services_files }}"
-      #       GITHUB_FILES="${{ steps.filter.outputs.github_files }}"
-
-      #       if [ -n "$GITHUB_FILES" ]; then
-
-      #         ALL_SERVICES=$(
-      #           find services -mindepth 1 -maxdepth 1 -type d -printf "%f\n" \
-      #             | jq -R -s -c 'split("\n") | map(select(length>0))'
-      #         )
-
-      #         echo "github_file_changed=true" >> $GITHUB_OUTPUT
-      #         echo "services=$ALL_SERVICES" >> $GITHUB_OUTPUT
-      #         echo "mode=all"
-
-      #       elif [ -n "$SERVICES_FILES" ]; then
-      #         MODIFIED_SERVICES=$(echo "$SERVICES_FILES" \
-      #           | tr ' ' '\n' \
-      #           | cut -d'/' -f2 \
-      #           | sort -u \
-      #           | jq -R -s -c 'split("\n") | map(select(length>0))')
-
-      #         echo "services_changed=true" >> $GITHUB_OUTPUT
-      #         echo "services=$MODIFIED_SERVICES" >> $GITHUB_OUTPUT
-      #         echo "mode=partial"
-      #       else
-      #         echo "services_changed=false" >> $GITHUB_OUTPUT
-      #         echo "services=[]" >> $GITHUB_OUTPUT
-      #       fi
-      #       echo "mode is $mode"
-      #       echo "service : $services are updated"
-
-
+          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" 
 
   unit-test:
     needs: detect-changes
-    if: needs.detect-changes.outputs.services_changed == 'true' || needs.detect-changes.outputs.github_file_changed == 'true'
+    if: needs.detect-changes.outputs.services_changed == 'true'
     strategy:
       fail-fast: false
       matrix:

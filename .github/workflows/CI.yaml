@@ -20,7 +20,7 @@ on:
         - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env
     paths:
       - "services/*"
-      - ".github/workflow/*"
+      - ".github/workflows/*"
 
 env:
   REGISTRY: docker.io

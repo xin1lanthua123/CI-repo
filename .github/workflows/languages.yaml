@@ -136,9 +136,6 @@ jobs:
         steps:
           - uses: actions/checkout@v4
 
-          # - name: Install Poetry
-          #   uses: snok/install-poetry@d526ede1e27960b7b181a5ac53044f552afdaa38 # v1.4.1
-
           - name: Setup Python
             uses: actions/setup-python@3d1e2d2ca0a067f27da6fec484fce7f5256def85 # v5.6.0
             with:
@@ -163,8 +160,12 @@ jobs:
           - name: Run test (Python)
             working-directory: services/${{ inputs.services }}
             run: |        
-                pip install pytest
-                pytest -q
+              if ! find . -name "test*.py" | grep -q .; then
+                echo "No tests -> skip"
+                exit 0
+              fi
+              pip install pytest
+              pytest -q
 
     Setup-Dotnet:
         name: Setup Dotnet

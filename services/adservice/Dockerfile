@@ -27,6 +27,8 @@ RUN --mount=type=cache,target=/root/.gradle \
 
 COPY . .
 
+RUN chmod +x gradlew
+
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew installDist
 

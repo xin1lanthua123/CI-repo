@@ -16,23 +16,18 @@ FROM --platform=$BUILDPLATFORM eclipse-temurin:24.0.2_12-jdk-noble@sha256:dacac8
 
 WORKDIR /app
 
-COPY gradlew .
-COPY build.gradle .
+COPY ["build.gradle", "gradlew", "./"]
 COPY gradle gradle
-
 RUN chmod +x gradlew
 
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew downloadRepos
 
 COPY . .
-
 RUN chmod +x gradlew
 
 RUN --mount=type=cache,target=/root/.gradle \
     ./gradlew installDist
-
-RUN ls -la /app/build/install
 
 FROM eclipse-temurin:25.0.1_8-jre-alpine@sha256:b51543f89580c1ba70e441cfbc0cfc1635c3c16d2e2d77fec9d890342a3a8687
 
@@ -50,6 +45,7 @@ RUN addgroup -g 1000 appgroup \
 
 COPY --link --from=builder  \
     /app/build/install/hipstershop /app
+    
 RUN chown -R appuser:appgroup /app
 
 USER appuser

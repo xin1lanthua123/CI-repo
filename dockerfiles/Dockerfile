@@ -1,31 +1,60 @@
-FROM golang AS BUILD
+# Copyright 2020 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+FROM --platform=$BUILDPLATFORM eclipse-temurin:24.0.2_12-jdk-noble@sha256:dacac8e9a0df0d2bd24e702b4431132875c249930b70555ebd7ca285b5bee684 AS builder
 
 WORKDIR /app
 
-COPY go.mod go.sum ./
+COPY build.gradle .
+COPY gradle gradle
+COPY gradlew .
 
-RUN useradd -u 1000 nonroot
+RUN chmod +x gradlew
 
-RUN --mount=type=cache,target=/go/pkg/mod \
-  --mount=type=cache,target=/root/.cache/go-build \
-  go mod download
-
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew downloadRepos
 
 COPY . .
 
-RUN go build \
-  -ldflags="-linkmode external -extldflags -static" \
-  -tags netgo \
-  -o api-golang
+RUN chmod +x gradlew
 
-FROM scratch
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew installDist
 
-COPY --link --from=BUILD  etc/passwd etc/passwd
+RUN ls -la /app/build/install
 
-COPY --link --from=BUILD /app/api-golang api-golang
+FROM eclipse-temurin:25.0.1_8-jre-alpine@sha256:b51543f89580c1ba70e441cfbc0cfc1635c3c16d2e2d77fec9d890342a3a8687
 
-USER nonroot
+# @TODO: https://github.com/GoogleCloudPlatform/microservices-demo/issues/2517
+# Download Stackdriver Profiler Java agent
+# RUN mkdir -p /opt/cprof && \
+#     wget -q -O- https://storage.googleapis.com/cloud-profiler/java/latest/profiler_java_agent_alpine.tar.gz \
+#     | tar xzv -C /opt/cprof && \
+#     rm -rf profiler_java_agent.tar.gz
 
-EXPOSE 8080
+WORKDIR /app
 
-ENTRYPOINT [ "./api-golang" ]
+RUN addgroup -g 1000 appgroup \
+ && adduser -u 1000 -G appgroup -S appuser
+
+COPY --link --from=builder  \
+    /app/build/install/hipstershop /app
+    
+RUN chown -R appuser:appgroup /app
+
+USER appuser
+
+EXPOSE 9555
+
+ENTRYPOINT ["/app/bin/AdService"]

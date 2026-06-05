@@ -1,3 +1,12 @@
+coverage/
+test-report.xml
+*.sonar.log
+sonar.log
+sonar-report.*
+report-task.txt
+.sonarqube/
+.sonar/
+.scannerwork
 #################################################
 # Terraform
 #################################################

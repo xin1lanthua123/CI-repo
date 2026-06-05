@@ -3034,11 +3034,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
+      "projectUniqueName": "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
       "projectName": "cartservice.tests",
-      "projectPath": "e:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
+      "projectPath": "E:\\CI-repo\\services\\cartservice\\tests\\cartservice.tests.csproj",
       "packagesPath": "C:\\Users\\Laptop\\.nuget\\packages\\",
-      "outputPath": "e:\\CI-repo\\services\\cartservice\\tests\\obj\\",
+      "outputPath": "E:\\CI-repo\\services\\cartservice\\tests\\obj\\",
       "projectStyle": "PackageReference",
       "configFilePaths": [
         "C:\\Users\\Laptop\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -3053,8 +3053,8 @@
         "net10.0": {
           "targetAlias": "net10.0",
           "projectReferences": {
-            "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
-              "projectPath": "e:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj"
+            "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj": {
+              "projectPath": "E:\\CI-repo\\services\\cartservice\\src\\cartservice.csproj"
             }
           }
         }

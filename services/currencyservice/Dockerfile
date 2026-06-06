@@ -39,4 +39,4 @@ COPY . .
 
 EXPOSE 7000
 
-ENTRYPOINT [ "server.js" ]
+CMD [ "server.js" ]

@@ -234,167 +234,167 @@ jobs:
           fi
           echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
 
-  build-and-push:
-    name: Build & Push Docker Images
-    runs-on: ubuntu-latest
-    needs: [generate-image-tag,detect-changes, unit-test,secret-scan,dependency-scan,dockerfile-lint]
-    if: needs.detect-changes.outputs.services_changed == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+  # build-and-push:
+  #   name: Build & Push Docker Images
+  #   runs-on: ubuntu-latest
+  #   needs: [generate-image-tag,detect-changes, unit-test,secret-scan,dependency-scan,dockerfile-lint]
+  #   if: needs.detect-changes.outputs.services_changed == 'true'
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       service: ${{ fromJson(needs.detect-changes.outputs.services) }}
 
-    permissions:
-      contents: read
-      id-token: write
+  #   permissions:
+  #     contents: read
+  #     id-token: write
 
-    env:
-      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+  #   env:
+  #     IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
 
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ github.head_ref }}
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #       with:
+  #         ref: ${{ github.head_ref }}
 
-      - name: Setup Docker Buildx
-        uses: docker/setup-buildx-action@v3
+  #     - name: Setup Docker Buildx
+  #       uses: docker/setup-buildx-action@v3
 
-      - name: Login DockerHub
-        uses: docker/login-action@v3
-        with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+  #     - name: Login DockerHub
+  #       uses: docker/login-action@v3
+  #       with:
+  #         username: ${{ secrets.DOCKER_USERNAME }}
+  #         password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Build and push
-        uses: docker/build-push-action@v5
-        with:
-          context: ./services/${{ matrix.service }}
-          file: ./services/${{ matrix.service }}/Dockerfile
-          platforms: linux/amd64,linux/arm64
-          push: true
-          tags: |
-            ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: true
-          sbom: true
+  #     - name: Build and push
+  #       uses: docker/build-push-action@v5
+  #       with:
+  #         context: ./services/${{ matrix.service }}
+  #         file: ./services/${{ matrix.service }}/Dockerfile
+  #         platforms: linux/amd64,linux/arm64
+  #         push: true
+  #         tags: |
+  #           ${{ env.DOCKERHUB_USER }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+  #         cache-from: type=gha
+  #         cache-to: type=gha,mode=max
+  #         provenance: true
+  #         sbom: true
 
-  image-security-scan:
-    name: Container Image Scan (Trivy)
-    runs-on: ubuntu-latest
-    needs: [generate-image-tag,detect-changes, build-and-push]
-    if: needs.detect-changes.outputs.services_changed == 'true'
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
-    env:
-      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+  # image-security-scan:
+  #   name: Container Image Scan (Trivy)
+  #   runs-on: ubuntu-latest
+  #   needs: [generate-image-tag,detect-changes, build-and-push]
+  #   if: needs.detect-changes.outputs.services_changed == 'true'
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+  #   env:
+  #     IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
 
-    steps:
-      - name: Scan image
-        uses: aquasecurity/trivy-action@v0.36.0 
-        with:
-          image-ref: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
-          format: table
-          exit-code: 0
-          severity: CRITICAL,HIGH
-          vuln-type: "os,library"
-          ignore-unfixed: true
-          timeout: "10m"
+  #   steps:
+  #     - name: Scan image
+  #       uses: aquasecurity/trivy-action@v0.36.0 
+  #       with:
+  #         image-ref: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+  #         format: table
+  #         exit-code: 0
+  #         severity: CRITICAL,HIGH
+  #         vuln-type: "os,library"
+  #         ignore-unfixed: true
+  #         timeout: "10m"
 
-  sign-image:
-    name: Sign Image (Cosign)
-    runs-on: ubuntu-latest
-    needs: [generate-image-tag,detect-changes,image-security-scan]
-    if: needs.detect-changes.outputs.services_changed == 'true' && github.ref_name == 'main'
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+  # sign-image:
+  #   name: Sign Image (Cosign)
+  #   runs-on: ubuntu-latest
+  #   needs: [generate-image-tag,detect-changes,image-security-scan]
+  #   if: needs.detect-changes.outputs.services_changed == 'true' && github.ref_name == 'main'
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       service: ${{ fromJson(needs.detect-changes.outputs.services) }}
 
-    env:
-      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+  #   env:
+  #     IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
 
-    permissions:
-      contents: read
-      id-token: write
+  #   permissions:
+  #     contents: read
+  #     id-token: write
 
-    steps:
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3
+  #   steps:
+  #     - name: Install Cosign
+  #       uses: sigstore/cosign-installer@v3
 
-      - name: Sign image
-        run: |
-          cosign sign --yes docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
-        env:
-          COSIGN_EXPERIMENTAL: "1"
+  #     - name: Sign image
+  #       run: |
+  #         cosign sign --yes docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+  #       env:
+  #         COSIGN_EXPERIMENTAL: "1"
 
-      - name: Verify signature
-        run: |
-          cosign verify docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+  #     - name: Verify signature
+  #       run: |
+  #         cosign verify docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
 
-  update-development-image-tag:
-    name: Update development image tag
-    permissions:
-          contents: write
-          pull-requests: write
-    needs:
-      - generate-image-tag
-      - detect-changes
-      - image-security-scan
+  # update-development-image-tag:
+  #   name: Update development image tag
+  #   permissions:
+  #         contents: write
+  #         pull-requests: write
+  #   needs:
+  #     - generate-image-tag
+  #     - detect-changes
+  #     - image-security-scan
 
-    if: |
-      needs.detect-changes.outputs.services_changed == 'true' && 
-      github.ref == 'refs/heads/dev' && 
-      github.event_name == 'push'
+  #   if: |
+  #     needs.detect-changes.outputs.services_changed == 'true' && 
+  #     github.ref == 'refs/heads/dev' && 
+  #     github.event_name == 'push'
     
 
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       service: ${{ fromJson(needs.detect-changes.outputs.services) }}
 
-    uses: ./.github/workflows/update-images.yaml
-    with:
-      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
-      IDENTIFIER_COMMENT: "DEV_IMAGE_TAG"
-      STARTING_PATH: .
-      SERVICES: ${{ matrix.service }}
-      ENV: dev
+  #   uses: ./.github/workflows/update-images.yaml
+  #   with:
+  #     IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+  #     IDENTIFIER_COMMENT: "DEV_IMAGE_TAG"
+  #     STARTING_PATH: .
+  #     SERVICES: ${{ matrix.service }}
+  #     ENV: dev
 
-    secrets:
-      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+  #   secrets:
+  #     GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
 
       
 
-  update-production-image-tag:
-    name: Update production image tag
+  # update-production-image-tag:
+  #   name: Update production image tag
 
-    needs:
-      - generate-image-tag
-      - detect-changes
-      - image-security-scan
-      - sign-image
+  #   needs:
+  #     - generate-image-tag
+  #     - detect-changes
+  #     - image-security-scan
+  #     - sign-image
 
-    if: |
-      needs.detect-changes.outputs.services_changed == 'true' &&
-      startsWith(github.ref, 'refs/tags/') &&
-      github.event_name == 'push'
+  #   if: |
+  #     needs.detect-changes.outputs.services_changed == 'true' &&
+  #     startsWith(github.ref, 'refs/tags/') &&
+  #     github.event_name == 'push'
 
-    strategy:
-      fail-fast: false
-      matrix:
-        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       service: ${{ fromJson(needs.detect-changes.outputs.services) }}
 
-    uses: ./.github/workflows/update-images.yaml
+  #   uses: ./.github/workflows/update-images.yaml
 
-    with:
-      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
-      IDENTIFIER_COMMENT: "PROD_IMAGE_TAG"
-      STARTING_PATH: ${{ github.workspace }}
-      SERVICES: ${{ matrix.service }}
-      ENV: prod
+  #   with:
+  #     IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+  #     IDENTIFIER_COMMENT: "PROD_IMAGE_TAG"
+  #     STARTING_PATH: ${{ github.workspace }}
+  #     SERVICES: ${{ matrix.service }}
+  #     ENV: prod
 
-    secrets:
-      GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+  #   secrets:
+  #     GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}

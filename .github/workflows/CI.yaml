@@ -159,7 +159,7 @@ jobs:
       - name: Gitleaks scan
         uses: gitleaks/gitleaks-action@v2
         with:
-          scan-path: services/${{ matrix.service }}
+          args: detect --source services/${{ matrix.service }} --verbose
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

@@ -27,6 +27,10 @@ env:
   DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
   IMAGE_TAG: ${{ github.sha }}
 
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   detect-changes:
     name: Detect Changed Services

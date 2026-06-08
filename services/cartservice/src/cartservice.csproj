@@ -16,4 +16,7 @@
   <ItemGroup>
     <Protobuf Include="protos\Cart.proto" GrpcServices="Both" />
   </ItemGroup>
+  <ItemGroup>
+  <PackageReference Include="coverlet.collector" Version="6.0.2" />
+</ItemGroup>
 </Project>

@@ -1,202 +1,254 @@
-name: Reusable workflow CICD pipeline for language extractions
-on: 
-    workflow_call:
-        inputs:
-            services:
-                description: "service languages"
-                required: true
-                type: string
+  name: Reusable workflow CICD pipeline for language extractions
+  on: 
+      workflow_call:
+          inputs:
+              services:
+                  description: "service languages"
+                  required: true
+                  type: string
 
 
-jobs:
-    detect-language:
-        name: Unit Test
-        runs-on: ubuntu-latest
-        outputs:
-            lang: ${{ steps.lang.outputs.lang }} 
-        steps:
-          - uses: actions/checkout@v4
-          - name: Detect language
-            id: lang
-            run: |
-                if [ -f "services/${{ inputs.services }}/package.json" ]; then
-                    echo "lang=javascript" >> $GITHUB_OUTPUT
+  jobs:
+      detect-language:
+          name: Unit Test
+          runs-on: ubuntu-latest
+          outputs:
+              lang: ${{ steps.lang.outputs.lang }} 
+          steps:
+            - uses: actions/checkout@v4
+            - name: Detect language
+              id: lang
+              run: |
+                  if [ -f "services/${{ inputs.services }}/package.json" ]; then
+                      echo "lang=javascript" >> $GITHUB_OUTPUT
 
-                elif [ -f "services/${{ inputs.services }}/build.gradle" ]; then 
-                    echo "lang=java" >> $GITHUB_OUTPUT
+                  elif [ -f "services/${{ inputs.services }}/build.gradle" ]; then 
+                      echo "lang=java" >> $GITHUB_OUTPUT
 
-                elif [ -f "services/${{ inputs.services }}/go.mod" ]; then
-                    echo "lang=go" >> $GITHUB_OUTPUT
+                  elif [ -f "services/${{ inputs.services }}/go.mod" ]; then
+                      echo "lang=go" >> $GITHUB_OUTPUT
 
-                elif [ -f "services/${{ inputs.services }}/requirements.txt" ]; then
-                    echo "lang=python" >> $GITHUB_OUTPUT
+                  elif [ -f "services/${{ inputs.services }}/requirements.txt" ]; then
+                      echo "lang=python" >> $GITHUB_OUTPUT
 
-                elif find "services/${{ inputs.services }}" -name "**.csproj" | grep -q .; then
-                    echo "lang=dotnet" >> $GITHUB_OUTPUT 
-                else
-                    echo "lang=unknown" >> $GITHUB_OUTPUT
+                  elif find "services/${{ inputs.services }}" -name "**.csproj" | grep -q .; then
+                      echo "lang=dotnet" >> $GITHUB_OUTPUT 
+                  else
+                      echo "lang=unknown" >> $GITHUB_OUTPUT
+                  fi
+      Fall-unknown:
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'unknown'
+          steps:
+            - name: Unknown Language change
+              run: |
+                echo "Unsupported language"
+                exit 1
+
+      Setup-JavaScript:
+          name: Setup JavaScript
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'javascript'
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup JavaScript           
+              uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 #v6.2.0
+              with:
+                  node-version: '20'
+                  cache: "npm"
+                  cache-dependency-path: services/${{ inputs.services }}/package-lock.json
+            - name: Download dependencies for JavaScript (Node)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  npm ci
+
+            - name: Run lint for JavaScript (Node)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  npm run lint --if-present
+
+            - name: Run tests for JavaScript (Node)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  npm run test -- --coverage || true
+
+            - name: Upload coverage
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage-${{ inputs.services }}-${{ github.sha }}
+                path: services/${{ inputs.services }}/coverage/lcov.info
+                if-no-files-found: warn
+
+      Setup-Java:
+          name: Setup Java
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'java'
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Java
+              uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  #v5.2.0                
+              with:
+                  distribution: 'temurin'
+                  java-version : 21
+                  cache: 'gradle'
+                  cache-dependency-path: |
+                      services/${{ inputs.services }}/build.gradle
+                      services/${{ inputs.services }}/settings.gradle
+                      services/${{ inputs.services }}/gradle/wrapper/gradle-wrapper.properties
+
+            - name: Download dependencies
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  chmod +x ./gradlew
+                  ./gradlew downloadRepos
+
+            - name: Run tests 
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  ./gradlew test jacocoTestReport
+                  ./gradlew installDist
+
+            - name: Upload coverage
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage-${{ inputs.services }}-${{ github.sha }}
+                path: services/${{ inputs.services }}/build/reports/jacoco/test/jacocoTestReport.xml
+                if-no-files-found: warn
+
+      Setup-Go:
+          name: Setup Go
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'go'
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Go
+              uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c  #v6.4.0
+              with:
+                  go-version-file: services/${{ inputs.services }}/go.mod
+                  cache: true
+                  cache-dependency-path: services/${{ inputs.services }}/go.sum
+                  
+            - name: Run golangci-lint
+              uses: golangci/golangci-lint-action@v8
+              with:
+                  version: v2.1.0
+                  working-directory: services/${{ inputs.services }}
+                  args: --issues-exit-code=0
+
+            - name: Run download (Go)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  go mod download
+              
+            - name: Run tests (Go)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  go test ./... -v -coverprofile=coverage.out || true
+                  go tool cover -func=coverage.out || true
+
+            - name: Upload coverage
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage-${{ inputs.services }}-${{ github.sha }}
+                path: services/${{ inputs.services }}/coverage.out
+                if-no-files-found: warn
+
+      Setup-Python:
+          name: Setup Python
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'python'
+          steps:
+            - uses: actions/checkout@v4
+
+            - name: Setup Python
+              uses: actions/setup-python@3d1e2d2ca0a067f27da6fec484fce7f5256def85 # v5.6.0
+              with:
+                  python-version: "3.11"
+                  cache: pip
+                  cache-dependency-path: |
+                      services/${{ inputs.services }}/requirements.txt
+                      services/${{ inputs.services }}/requirements-dev.txt
+
+            - name: Run lint for Python(ruff)
+              working-directory: services/${{ inputs.services }}
+              run: |
+                  pip install ruff
+                  ruff check . || true
+                  ruff format . --check || true
+                  
+            - name: Download Dependencies (Python)
+              working-directory: services/${{ inputs.services }}
+              run: |        
+                  pip install -r requirements.txt
+
+            - name: Run test (Python)
+              working-directory: services/${{ inputs.services }}
+              run: |        
+                if ! find . \( -name "test*.py" -o -name "*_test.py" \) | grep -q .; then
+                  echo "No tests -> skip"
+                  exit 0
                 fi
-    Fall-unknown:
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'unknown'
-        steps:
-          - name: Unknown Language change
-            run: |
-              echo "Unsupported language"
-              exit 1
+                pip install pytest pytest-cov
+                pytest --cov=. --cov-report=xml --cov-report=term
+              
+            - name: Upload coverage
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage-${{ inputs.services }}-${{ github.sha }}
+                path: services/${{ inputs.services }}/coverage.xml
+                if-no-files-found: warn
 
-    Setup-JavaScript:
-        name: Setup JavaScript
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'javascript'
-        steps:
-          - uses: actions/checkout@v4
+      Setup-Dotnet:
+          name: Setup Dotnet
+          runs-on: ubuntu-latest
+          needs: detect-language
+          if: needs.detect-language.outputs.lang == 'dotnet'
+          steps:
+            - uses: actions/checkout@v4
 
-          - name: Setup JavaScript           
-            uses: actions/setup-node@6044e13b5dc448c55e2357c09f80417699197238 #v6.2.0
-            with:
-                node-version: '20'
-                cache: "npm"
-                cache-dependency-path: services/${{ inputs.services }}/package-lock.json
-          - name: Run tests for JavaScript (Node)
-            working-directory: services/${{ inputs.services }}
-            run: |
-                npm ci
-                npm run lint --if-present
-                npm run test || true
-    Setup-Java:
-        name: Setup Java
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'java'
-        steps:
-          - uses: actions/checkout@v4
+            - name: Setup .NET
+              uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 #v5.2.0
+              with:
+                  dotnet-version: '8.0.x'
 
-          - name: Setup Java
-            uses: actions/setup-java@be666c2fcd27ec809703dec50e508c2fdc7f6654  #v5.2.0                
-            with:
-                distribution: 'temurin'
-                java-version : 21
-                cache: 'gradle'
-                cache-dependency-path: |
-                    services/${{ inputs.services }}/build.gradle
-                    services/${{ inputs.services }}/settings.gradle
-                    services/${{ inputs.services }}/gradle/wrapper/gradle-wrapper.properties
+            - name: Cache Dotnet (NuGet)
+              uses: actions/cache@v4
+              with:
+                  path: ~/.nuget/packages
+                  key: ${{ runner.os }}-nuget-${{ hashFiles(format('services/{0}/**/*.csproj', inputs.services)) }}
+                  restore-keys: |
+                      ${{ runner.os }}-nuget-${{ inputs.services }}
 
-          - name: Download dependencies
-            working-directory: services/${{ inputs.services }}
-            run: |
-                chmod +x ./gradlew
-                ./gradlew downloadRepos
+            - name: Restore dependencies
+              working-directory: services/${{ inputs.services }}
+              run: dotnet restore
 
-          - name: Run tests 
-            working-directory: services/${{ inputs.services }}
-            run: |
-                ./gradlew test
-                ./gradlew installDist
-    Setup-Go:
-        name: Setup Go
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'go'
-        steps:
-          - uses: actions/checkout@v4
+            - name: Build (with lint analyzers)
+              working-directory: services/${{ inputs.services }}
+              run: dotnet build -c Release --no-restore /p:TreatWarningsAsErrors=true
 
-          - name: Setup Go
-            uses: actions/setup-go@4a3601121dd01d1626a1e23e37211e3254c1c06c  #v6.4.0
-            with:
-                go-version-file: services/${{ inputs.services }}/go.mod
-                cache: true
-                cache-dependency-path: services/${{ inputs.services }}/go.sum
-                
-          - name: Run golangci-lint
-            uses: golangci/golangci-lint-action@v8
-            with:
-                version: v2.1.0
-                working-directory: services/${{ inputs.services }}
-                args: --issues-exit-code=0
-
-          - name: Run download (Go)
-            working-directory: services/${{ inputs.services }}
-            run: |
-                go mod download
+            - name: Run tests
+              working-directory: services/${{ inputs.services }}
+              run: | 
+                # dotnet test -c Release --no-build --verbosity normal --logger "console;verbosity=detailed"
+                dotnet test \
+                  -c Release \
+                  --no-build \
+                  --collect:"XPlat Code Coverage" \
+                  --results-directory TestResults
             
-          - name: Run tests (Go)
-            working-directory: services/${{ inputs.services }}
-            run: |
-                go test ./... -v
-
-    Setup-Python:
-        name: Setup Python
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'python'
-        steps:
-          - uses: actions/checkout@v4
-
-          - name: Setup Python
-            uses: actions/setup-python@3d1e2d2ca0a067f27da6fec484fce7f5256def85 # v5.6.0
-            with:
-                python-version: "3.11"
-                cache: pip
-                cache-dependency-path: |
-                    services/${{ inputs.services }}/requirements.txt
-                    services/${{ inputs.services }}/requirements-dev.txt
-
-          - name: Run lint for Python(ruff)
-            working-directory: services/${{ inputs.services }}
-            run: |
-                pip install ruff
-                ruff check . || true
-                ruff format . --check || true
-                
-          - name: Download Dependencies (Python)
-            working-directory: services/${{ inputs.services }}
-            run: |        
-                pip install -r requirements.txt
-
-          - name: Run test (Python)
-            working-directory: services/${{ inputs.services }}
-            run: |        
-              if ! find . -name "test*.py" | grep -q .; then
-                echo "No tests -> skip"
-                exit 0
-              fi
-              pip install pytest
-              pytest -q
-
-    Setup-Dotnet:
-        name: Setup Dotnet
-        runs-on: ubuntu-latest
-        needs: detect-language
-        if: needs.detect-language.outputs.lang == 'dotnet'
-        steps:
-          - uses: actions/checkout@v4
-
-          - name: Setup .NET
-            uses: actions/setup-dotnet@c2fa09f4bde5ebb9d1777cf28262a3eb3db3ced7 #v5.2.0
-            with:
-                dotnet-version: '8.0.x'
-
-          - name: Cache Dotnet (NuGet)
-            uses: actions/cache@v4
-            with:
-                path: ~/.nuget/packages
-                key: ${{ runner.os }}-nuget-${{ hashFiles(format('services/{0}/**/*.csproj', inputs.services)) }}
-                restore-keys: |
-                    ${{ runner.os }}-nuget-${{ inputs.services }}
-
-          - name: Restore dependencies
-            working-directory: services/${{ inputs.services }}
-            run: dotnet restore
-
-          - name: Build (with lint analyzers)
-            working-directory: services/${{ inputs.services }}
-            run: dotnet build -c Release --no-restore /p:TreatWarningsAsErrors=true
-
-          - name: Run tests
-            working-directory: services/${{ inputs.services }}
-            run: dotnet test -c Release --no-build --verbosity normal --logger "console;verbosity=detailed"
-            
+            - name: Upload coverage
+              uses: actions/upload-artifact@v4
+              with:
+                name: coverage-${{ inputs.services }}-${{ github.sha }}
+                path: services/${{ inputs.services }}/TestResults/**/coverage.cobertura.xml
+                if-no-files-found: warn
+              

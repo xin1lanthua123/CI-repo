@@ -81,6 +81,7 @@
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage/lcov.info
                 if-no-files-found: warn
+                retention-days: 7
 
       Setup-Java:
           name: Setup Java
@@ -110,8 +111,7 @@
             - name: Run tests 
               working-directory: services/${{ inputs.services }}
               run: |
-                  ./gradlew test jacocoTestReport
-                  ./gradlew installDist
+                  ./gradlew clean test 
 
             - name: Upload coverage
               uses: actions/upload-artifact@v4
@@ -119,6 +119,8 @@
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/build/reports/jacoco/test/jacocoTestReport.xml
                 if-no-files-found: warn
+                retention-days: 7
+                
 
       Setup-Go:
           name: Setup Go
@@ -159,6 +161,7 @@
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage.out
                 if-no-files-found: warn
+                retention-days: 7
 
       Setup-Python:
           name: Setup Python
@@ -205,6 +208,7 @@
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage.xml
                 if-no-files-found: warn
+                retention-days: 7
 
       Setup-Dotnet:
           name: Setup Dotnet
@@ -251,4 +255,5 @@
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/TestResults/**/coverage.cobertura.xml
                 if-no-files-found: warn
+                retention-days: 7
               

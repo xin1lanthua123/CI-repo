@@ -183,6 +183,7 @@ jobs:
             if [ "$LANG" = "unknown" ]; then
               echo "args=" >> $GITHUB_OUTPUT
               exit 1
+            fi
           fi
       
       - name: SonarQube Scan

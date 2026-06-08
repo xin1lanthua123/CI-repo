@@ -156,7 +156,7 @@ jobs:
 
           elif find "services/${{ matrix.service }}" -name "*.csproj" | grep -q .; then
             echo "lang=dotnet" >> $GITHUB_OUTPUT
-          else:
+          else
             echo "lang=unknown" >> $GITHUB_OUTPUT
           fi
 

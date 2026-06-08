@@ -14,7 +14,7 @@ on:
     branches: [dev, main]
 
   push:
-    branches: [dev,main] # main branch which means staging env
+    branches: [dev,main] # main branch which means stage env
 
     tags:
         - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env

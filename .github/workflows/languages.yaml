@@ -73,7 +73,7 @@
             - name: Run tests for JavaScript (Node)
               working-directory: services/${{ inputs.services }}
               run: |
-                  npm run test -- --ci --coverage --watchAll=false --passwithNoTests
+                  npm run test -- --ci --coverage --watchAll=false --passWithNoTests
 
             - name: Upload coverage
               uses: actions/upload-artifact@v4

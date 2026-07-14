@@ -12,7 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-FROM --platform=$BUILDPLATFORM node:20.20.0-alpine@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c AS builder
+FROM --platform=$BUILDPLATFORM node:20.20.0-@sha256:3960ed74dfe320a67bf8da9555b6bade25ebda2b22b6081d2f60fd7d5d430e9c AS builder
 
 # Some packages (e.g. @google-cloud/profiler) require additional
 # deps for post-install scripts
@@ -28,6 +28,7 @@ COPY package*.json ./
 RUN --mount=type=cache,target=/usr/src/app/.npm \
   npm set cache /usr/src/app/.npm && \
   npm ci --only=production
+
 
 FROM gcr.io/distroless/nodejs20-debian12@sha256:6fe218dbad37e979c7542e670d28d6e23d3f53d2929693bc9cdded8b622f339f
 

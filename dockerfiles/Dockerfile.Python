@@ -1,66 +1,66 @@
 
-# 1. BUILD STAGE
-FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
+# # 1. BUILD STAGE
+# FROM --platform=$BUILDPLATFORM python:3.11-slim AS builder
 
-WORKDIR /app
+# WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONDONTWRITEBYTECODE=1
 
-ENV PYTHONUNBUFFERED=1
+# ENV PYTHONUNBUFFERED=1
 
-# tránh cache rác pip
-ENV PIP_NO_CACHE_DIR=1
+# # tránh cache rác pip
+# ENV PIP_NO_CACHE_DIR=1
 
-# Copy requirements trước để cache layer
-COPY requirements.txt .
+# # Copy requirements trước để cache layer
+# COPY requirements.txt .
 
-# cài dependencies vào thư mục riêng
-RUN pip install --prefix=/install -r requirements.txt
+# # cài dependencies vào thư mục riêng
+# RUN pip install --prefix=/install -r requirements.txt
 
-# copy source code
-COPY    . .
+# # copy source code
+# COPY    . .
 
-# 2. RUNTIME STAGE (HARDENED)
+# # 2. RUNTIME STAGE (HARDENED)
 
-FROM python:3.11-slim AS runtime
+# FROM python:3.11-slim AS runtime
 
-WORKDIR /app
+# WORKDIR /app
 
-ENV PYTHONDONTWRITEBYTECODE=1
-ENV PYTHONUNBUFFERED=1
+# ENV PYTHONDONTWRITEBYTECODE=1
+# ENV PYTHONUNBUFFERED=1
 
-# SECURITY HARDENING
+# # SECURITY HARDENING
 
-# 1. tạo user không root (no login shell)
-RUN useradd \
-    --create-home \
-    --shell /usr/sbin/nologin \
-    appuser
+# # 1. tạo user không root (no login shell)
+# RUN useradd \
+#     --create-home \
+#     --shell /usr/sbin/nologin \
+#     appuser
 
-# 2. hạn chế quyền filesystem
-RUN chmod -R 550 /usr/local
-# COPY ARTIFACTS
+# # 2. hạn chế quyền filesystem
+# RUN chmod -R 550 /usr/local
+# # COPY ARTIFACTS
 
-# copy python packages
-COPY --link --from=builder /install /usr/local
+# # copy python packages
+# COPY --link --from=builder /install /usr/local
 
-# copy source code
-COPY --link --from=builder /app /app
+# # copy source code
+# COPY --link --from=builder /app /app
 
-# fix ownership (quan trọng security)
-RUN chown -R appuser:appuser /app
+# # fix ownership (quan trọng security)
+# RUN chown -R appuser:appuser /app
 
-# SWITCH USER (VERY IMPORTANT)
-USER appuser
+# # SWITCH USER (VERY IMPORTANT)
+# USER appuser
 
-# RUNTIME SETTINGS
+# # RUNTIME SETTINGS
 
-WORKDIR /app
+# WORKDIR /app
 
-EXPOSE 8080
+# EXPOSE 8080
 
-ENV PYTHONNOUSERSITE=1
+# ENV PYTHONNOUSERSITE=1
 
-ENTRYPOINT ["python"]
+# ENTRYPOINT ["python"]
 
-CMD  ["app.py"]
+# CMD  ["app.py"]

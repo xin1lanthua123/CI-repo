@@ -33,12 +33,12 @@ on:
         description: "GITOPS REPO TOKEN"
         required: true
 
+permissions:
+  contents: read
 jobs:
   update-image:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source repo
-        uses: actions/checkout@v4
 
       - name: Checkout GitOps Repo
         uses: actions/checkout@v4
@@ -49,6 +49,7 @@ jobs:
 
       - name: Update YAML files
         shell: bash
+        working-directory: gitops
         run: |
           set -euo pipefail
 

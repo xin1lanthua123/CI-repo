@@ -108,10 +108,9 @@
                   chmod +x ./gradlew
                   ./gradlew downloadRepos
 
-            - name: Run tests 
-              working-directory: services/${{ inputs.services }}
+            - name: Run tests
               run: |
-                  ./gradlew clean test 
+                ./gradlew clean test jacocoTestReport
 
             - name: Upload coverage
               uses: actions/upload-artifact@v4

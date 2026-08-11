@@ -120,6 +120,14 @@
                 if-no-files-found: warn
                 retention-days: 7
                 
+            - name: Debug artifact
+              run: |
+                echo "Repository: ${{ github.repository }}"
+                echo "Run ID: ${{ github.run_id }}"
+                echo "SHA: ${{ github.sha }}"
+                echo "Service: ${{ inputs.services }}"
+                echo "Artifact: coverage-${{ inputs.services }}-${{ github.sha }}"
+                
 
       Setup-Go:
           name: Setup Go

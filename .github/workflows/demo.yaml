@@ -15,7 +15,7 @@ on:
       - dev
       - main            # main branch means stage environment
       - 'ci/feature/**' # main branch which means stage env
-
+      - 'ci/feature'
     paths:
       - "services/**"
       - ".github/workflows/**"

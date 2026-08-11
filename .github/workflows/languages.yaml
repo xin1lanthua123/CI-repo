@@ -127,7 +127,17 @@
                 echo "SHA: ${{ github.sha }}"
                 echo "Service: ${{ inputs.services }}"
                 echo "Artifact: coverage-${{ inputs.services }}-${{ github.sha }}"
-                
+            - name: Debug JaCoCo
+              working-directory: services/${{ inputs.services }}
+              run: |
+                echo "=== JaCoCo files ==="
+                find . -type f \( -name "*.xml" -o -name "*.exec" \) | sort
+
+                echo "=== JaCoCo directories ==="
+                find build -type d -iname "*jacoco*" 2>/dev/null | sort || true
+
+                echo "=== Gradle JaCoCo tasks ==="
+                ./gradlew tasks --all | grep -i jacoco || true                
 
       Setup-Go:
           name: Setup Go

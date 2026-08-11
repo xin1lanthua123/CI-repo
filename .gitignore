@@ -7,6 +7,7 @@ report-task.txt
 .sonarqube/
 .sonar/
 .scannerwork
+SonarCube
 #################################################
 # Terraform
 #################################################

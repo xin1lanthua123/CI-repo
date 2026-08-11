@@ -1,0 +1,459 @@
+name: Microservices-CI
+
+on:
+  pull_request:
+    branches:
+      - dev
+      - main 
+    
+    paths:
+      - "services/**"
+      - ".github/workflows/**"
+
+  push:
+    branches:
+      - dev
+      - main            # main branch means stage environment
+      - 'ci/feature/**' # main branch which means stage env
+
+    tags:
+        - "[0-9]*.[0-9]*.[0-9]*" # tag branch which means production env
+
+    paths:
+      - "services/**"
+      - ".github/workflows/**"
+    
+env:
+  REGISTRY: docker.io
+  DOCKERHUB_USER: ${{ secrets.DOCKER_USERNAME }}
+  IMAGE_TAG: ${{ github.sha }}
+
+concurrency:
+  group:  ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect-changes:
+    name: Detect Changed Services
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.extract.outputs.services }}
+      services_changed: ${{ steps.extract.outputs.services_changed }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+    
+          
+
+      - name: Paths Filter
+        id: filter
+        uses: dorny/paths-filter@fbd0ab8f3e69293af611ebaee6363fc25e6d187d #vv4.0.1
+        with:
+          list-files: shell
+          # base: ${{ github.event.before }}
+          # ref: ${{ github.sha }}
+          filters: |
+            services:
+              - 'services/**'
+            github:
+              - '.github/workflows/**'
+
+      - name: Extract services
+        id: extract
+        shell: bash
+        run: |
+          set -euo pipefail
+          
+          
+          SERVICES_FILES="${{ steps.filter.outputs.services_files }}"
+          GITHUB_FILES="${{ steps.filter.outputs.github_files }}"
+
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+              ALL_SERVICES=$( 
+              find services -mindepth 1 -maxdepth 1 -type d -printf "%f\n" \
+                | jq -R -s -c 'split("\n") | map(select(length>0))'
+            )
+
+            echo "services=$ALL_SERVICES" >> $GITHUB_OUTPUT
+            echo "services_changed=true" >> $GITHUB_OUTPUT
+
+            exit 0
+          fi
+
+          if [ -n "$GITHUB_FILES" ]; then
+
+            ALL_SERVICES=$( 
+              find services -mindepth 1 -maxdepth 1 -type d -printf "%f\n" \
+                | jq -R -s -c 'split("\n") | map(select(length>0))'
+            )
+
+            SERVICES="$ALL_SERVICES"
+            MODE="all"
+
+          elif [ -n "$SERVICES_FILES" ]; then
+
+            MODIFIED_SERVICES=$(
+              echo "$SERVICES_FILES" \
+                | tr ' ' '\n' \
+                | cut -d'/' -f2 \
+                | sort -u \
+                | jq -R -s -c 'split("\n") | map(select(length>0))'
+            )
+
+            SERVICES="$MODIFIED_SERVICES"
+            MODE="partial"
+
+          else
+            SERVICES="[]"
+            MODE="none"
+          fi
+
+          if [ "$SERVICES" != "[]" ]; then
+            echo "services_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "services_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+
+          echo "services=$SERVICES" >> "$GITHUB_OUTPUT"
+          echo "mode=$MODE" >> "$GITHUB_OUTPUT"
+
+  unit-test:
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    uses: ./.github/workflows/languages.yaml
+    with:
+      services: ${{ matrix.service }}
+
+  sast-sonarqube:
+    name: SonarQube SAST
+    runs-on: ubuntu-latest
+    needs: 
+      - detect-changes
+      - unit-test
+    if: needs.detect-changes.outputs.services_changed == 'true'
+
+    strategy:
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}-${{ github.sha }}
+          path: services/${{ matrix.service }}
+
+      - name: Detect language
+        id: lang
+        run: |
+          if [ -f "services/${{ matrix.service }}/go.mod" ]; then
+            echo "lang=go" >> $GITHUB_OUTPUT
+
+          elif [ -f "services/${{ matrix.service }}/build.gradle" ]; then
+            echo "lang=java" >> $GITHUB_OUTPUT
+
+          elif [ -f "services/${{ matrix.service }}/package.json" ]; then
+            echo "lang=javascript" >> $GITHUB_OUTPUT
+
+          elif [ -f "services/${{ matrix.service }}/requirements.txt" ]; then
+            echo "lang=python" >> $GITHUB_OUTPUT
+
+          elif find "services/${{ matrix.service }}" -name "*.csproj" | grep -q .; then
+            echo "lang=dotnet" >> $GITHUB_OUTPUT
+          else
+            echo "lang=unknown" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Sonar args
+        id: sonar
+        run: |
+          LANG="${{ steps.lang.outputs.lang }}"
+
+          if [ "$LANG" = "go" ]; then
+            echo "args=-Dsonar.go.coverage.reportPaths=services/${{matrix.service}}/coverage.out" >> $GITHUB_OUTPUT
+
+          elif [ "$LANG" = "java" ]; then
+            echo "args=-Dsonar.coverage.jacoco.xmlReportPaths=services/${{matrix.service}}/build/reports/jacoco/test/jacocoTestReport.xml" >> $GITHUB_OUTPUT
+
+          elif [ "$LANG" = "javascript" ]; then
+            echo "args=-Dsonar.javascript.lcov.reportPaths=services/${{matrix.service}}/coverage/lcov.info" >> $GITHUB_OUTPUT
+
+          elif [ "$LANG" = "python" ]; then
+            echo "args=-Dsonar.python.coverage.reportPaths=services/${{matrix.service}}/coverage.xml" >> $GITHUB_OUTPUT
+
+          elif [ "$LANG" = "dotnet" ]; then
+            echo "args=-Dsonar.cs.opencover.reportsPaths=services/${{matrix.service}}/TestResults/**/coverage.cobertura.xml" >> $GITHUB_OUTPUT
+          else
+            if [ "$LANG" = "unknown" ]; then
+              echo "args=" >> $GITHUB_OUTPUT
+              exit 1
+            fi
+          fi
+      
+      - name: SonarQube Scan
+        uses: SonarSource/sonarqube-scan-action@v6
+        with:
+          projectBaseDir: services/${{ matrix.service }}
+          args: ${{ steps.sonar.outputs.args }}
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+          SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
+
+      - name: Quality Gate Check
+        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+  secret-scan:
+    name: Secret Scan (Gitleaks)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    # strategy:
+    #   fail-fast: false
+    #   matrix: 
+    #     service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Gitleaks scan
+        uses: gitleaks/gitleaks-action@v2
+        # with:
+        #   args: detect --source services/${{ matrix.service }} --verbose
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+ 
+  dependency-scan:
+    name: Dependency Scan (Trivy FS)
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - uses: actions/checkout@v4
+        
+
+      - name: Trivy filesystem scan
+        uses: aquasecurity/trivy-action@v0.36.0        
+        with:
+          scan-type: fs
+          format: table
+          scan-ref: services/${{ matrix.service }}
+          scanners: vuln,misconfig
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: 0  # set to 1 in prod
+
+  dockerfile-lint :
+    name: " Dockerfile Lint"
+    runs-on: ubuntu-latest
+    needs: [detect-changes]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy: 
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        
+      - name: Run Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: services/${{ matrix.service }}/Dockerfile
+          failure-threshold: error  
+          # failure-threshold: warning  # or using "warning" to upgrade the dockerfile to its best quality"
+
+
+  generate-image-tag:
+    name: Generate image tag
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    outputs:
+      image_tag: ${{ steps.image_tag.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+        
+
+      - name: Generate tag from git
+        id: image_tag
+        run: |
+          IMAGE_TAG=$(git describe --tags --first-parent --match "[0-9]*.[0-9]*.[0-9]*" 2>/dev/null || true)
+          if [ -z "$IMAGE_TAG" ]; then
+             IMAGE_TAG=${GITHUB_SHA::7}
+          fi
+          echo "image_tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+  build-scan-and-push:
+    name: Build & Push Docker Images
+    runs-on: ubuntu-latest
+    needs: [generate-image-tag,detect-changes, unit-test,secret-scan,dependency-scan,dockerfile-lint]
+    if: needs.detect-changes.outputs.services_changed == 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    permissions:
+      contents: read
+    
+
+    env:
+      IMAGE_NAME: docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker
+        uses: docker/setup-docker-action@v5
+        with:
+          daemon-config: |
+            {
+              "features": {
+                "containerd-snapshotter": true
+              }
+            }
+
+      - name: Setup QEMU
+        uses: docker/setup-qemu-action@v3
+        
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+      
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=${{ env.IMAGE_TAG }}
+            type=sha,prefix=sha-
+            type=ref,event=branch
+            type=raw,value=latest,enable={{is_default_branch}}
+          labels: |
+            org.opencontainers.image.version=${{ env.IMAGE_TAG }}
+
+      - name: Build Image (NO PUSH)
+        uses: docker/build-push-action@v6
+        with:
+            context: ./services/${{ matrix.service }}
+            file: ./services/${{ matrix.service }}/Dockerfile
+            platforms: linux/amd64,linux/arm64
+            load: true
+            push: false
+            tags: ${{ steps.meta.outputs.tags }} 
+            labels: ${{ steps.meta.outputs.labels }}
+            cache-from: type=gha
+            cache-to: type=gha,mode=max
+            provenance: true
+            sbom: true
+
+      - name: Inspect local multi-platform image
+        run: |
+            docker image inspect \
+              "${IMAGE_NAME}:${IMAGE_TAG}" \
+              --format '{{json .}}' | jq .
+
+            echo "Checking linux/amd64..."
+            docker image inspect \
+              "${IMAGE_NAME}:${IMAGE_TAG}" \
+              --platform linux/amd64 \
+              --format 'OS={{.Os}} ARCH={{.Architecture}}'
+
+            echo "Checking linux/arm64..."
+            docker image inspect \
+              "${IMAGE_NAME}:${IMAGE_TAG}" \
+              --platform linux/arm64 \
+              --format 'OS={{.Os}} ARCH={{.Architecture}}'
+
+      - name: Scan image
+        uses: aquasecurity/trivy-action@v0.36.0 
+        with:
+          image-ref: ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+          format: table
+          exit-code: 1
+          severity: CRITICAL,HIGH
+          vuln-type: "os,library"
+          ignore-unfixed: true
+          timeout: "10m"
+
+      - name: Login DockerHub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      - name: Push Image
+        if: github.event_name != 'pull_request'
+        env:
+          TAGS: ${{ steps.meta.outputs.tags }}
+        run: |
+          echo "$TAGS" | while read -r tag; do
+            echo "Pushing $tag"
+            docker push "$tag"
+          done
+
+
+      
+      - name: Inspect Image
+        if: github.event_name != 'pull_request'
+        run: |
+          docker buildx imagetools inspect \
+            ${{ env.IMAGE_NAME }}:${{ env.IMAGE_TAG }}
+
+  sign-image:
+    name: Sign Image (Cosign)
+    runs-on: ubuntu-latest
+    needs: [generate-image-tag,detect-changes,build-scan-and-push]
+    if: |
+        needs.detect-changes.outputs.services_changed == 'true' &&
+        startsWith(github.ref, 'refs/tags/')
+    strategy:
+      fail-fast: false
+      matrix:
+        service: ${{ fromJson(needs.detect-changes.outputs.services) }}
+
+    env:
+      IMAGE_TAG: ${{ needs.generate-image-tag.outputs.image_tag }}
+
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - name: Install Cosign
+        uses: sigstore/cosign-installer@v3
+
+      - name: Sign image
+        run: |
+          cosign sign --yes docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}
+        env:
+          COSIGN_EXPERIMENTAL: "1"
+
+      - name: Verify signature
+        run: |
+          cosign verify docker.io/${{ secrets.DOCKER_USERNAME }}/${{ matrix.service }}:${{ env.IMAGE_TAG }}

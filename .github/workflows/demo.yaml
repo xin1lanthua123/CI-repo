@@ -156,6 +156,7 @@ jobs:
         with:
           name: coverage-${{ matrix.service }}-${{ github.sha }}
           path: services/${{ matrix.service }}
+          if-no-files-found: warn
 
       - name: Detect language
         id: lang

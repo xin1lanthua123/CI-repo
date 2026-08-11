@@ -151,11 +151,11 @@ jobs:
         with:
           fetch-depth: 0
 
-      # - name: Download Coverage
-      #   uses: actions/download-artifact@v4
-      #   with:
-      #     name: coverage-${{ matrix.service }}-${{ github.sha }}
-      #     path: services/${{ matrix.service }}
+      - name: Download Coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: coverage-${{ matrix.service }}-${{ github.sha }}
+          path: services/${{ matrix.service }}
 
       - name: Detect language
         id: lang

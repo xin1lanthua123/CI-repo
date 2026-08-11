@@ -109,6 +109,7 @@
                   ./gradlew downloadRepos
 
             - name: Run tests
+              working-directory: services/${{ inputs.services }}
               run: |
                 ./gradlew clean test jacocoTestReport
 

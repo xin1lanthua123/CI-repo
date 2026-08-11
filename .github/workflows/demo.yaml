@@ -1,4 +1,4 @@
-name: Microservices-CIs
+name: Microservices-CI
 
 on:
   pull_request:

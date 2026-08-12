@@ -80,7 +80,7 @@
               with:
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage/lcov.info
-                if-no-files-found: warn
+                if-no-files-found: error
                 retention-days: 7
 
       Setup-Java:
@@ -111,7 +111,7 @@
             - name: Run tests
               working-directory: services/${{ inputs.services }}
               run: |
-                ./gradlew clean test 
+                ./gradlew clean test jacocoTestReport
 
             - name: Upload coverage
               uses: actions/upload-artifact@v4
@@ -160,7 +160,7 @@
               with:
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage.out
-                if-no-files-found: warn
+                if-no-files-found: error
                 retention-days: 7
 
       Setup-Python:
@@ -207,7 +207,7 @@
               with:
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/coverage.xml
-                if-no-files-found: warn
+                if-no-files-found: error
                 retention-days: 7
 
       Setup-Dotnet:
@@ -254,6 +254,6 @@
               with:
                 name: coverage-${{ inputs.services }}-${{ github.sha }}
                 path: services/${{ inputs.services }}/TestResults/**/coverage.cobertura.xml
-                if-no-files-found: warn
+                if-no-files-found: error
                 retention-days: 7
               

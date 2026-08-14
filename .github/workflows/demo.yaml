@@ -212,10 +212,18 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
           SONAR_HOST_URL: ${{ secrets.SONAR_HOST_URL }}
 
+      # - name: Quality Gate Check
+      #   uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+      #   env:
+      #     SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
       - name: Quality Gate Check
-        uses: sonarsource/sonarqube-quality-gate-action@v1.2.0
+        uses: SonarSource/sonarqube-quality-gate-action@v1.2.0
+        with:
+          scanMetadataReportFile: services/${{ matrix.service }}/.scannerwork/report-task.txt
+          pollingTimeoutSec: 300
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
   secret-scan:
     name: Secret Scan (Gitleaks)

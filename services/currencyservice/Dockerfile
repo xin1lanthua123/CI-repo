@@ -34,6 +34,8 @@ FROM gcr.io/distroless/nodejs20-debian12@sha256:6fe218dbad37e979c7542e670d28d6e2
 
 WORKDIR /usr/src/app
 
+USER nonroot
+
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 
 COPY . .
